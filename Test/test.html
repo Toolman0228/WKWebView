@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+	<meta charset="UTF-8">
+		<html>
+			<h1>Hello JS world!</h1>
+
+			<button id="jsBtn">傳送訊息到APP</button>
+
+			<script>
+				// 當點網頁上的按鈕，會從JS發送訊息給Webview接收。
+				$('#jsBtn').on('click', () => {
+    				callNativeApp("Hi Native App !!");
+
+				});
+				function callNativeApp(data) {   
+    				try {
+        				// 從JS傳送資訊到App裡設定的callbackHandler。
+        				webkit.messageHandlers.callbackHandler.postMessage(data);
+
+    				}catch(err) {
+        				// 如果找不到定義的callbackHandler則回傳錯誤訊息。
+        				console.log('The native context does not exist yet!');
+
+    				}
+
+				}
+				// 這個function 用來提供給Webview呼叫來控制標題變成紅色範例。
+				function changeTitleColor() {
+    				$(h1).css('color', 'red');
+
+				}
+
+			</script>
+
+</html>

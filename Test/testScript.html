@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+    <head>
+
+        <meta charset="UTF-8">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0,user-scalable=no"/>
+
+    </head>
+
+    <body>
+
+        名字：<span id="name"></span>
+
+        <br/>
+        <!-- 當點網頁上的按鈕，會從 javaScript 發送訊息給 touchBarWebview 接收 -->
+        <button onclick="responseSwift()">點擊按鈕</button>
+
+        <script type="text/javascript">
+            function sayHello(name) {
+                document.getElementById("name").innerHTML = name
+
+                return "swift 你好！"
+
+            }
+
+            function responseSwift() {
+                // 從 javaScipt 送資訊到 App 裡設定的 callBackHandler
+                window.webkit.messageHandlers.AppModel.postMessage("webView 點擊，發送消息给 swift！")
+
+            }
+
+        </script>
+
+    </body>
+    
+</html>
