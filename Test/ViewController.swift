@@ -16,6 +16,8 @@ class ViewController: UIViewController {
     
     let tt1 = 0
     
+    let changeEmail = 1
+    
     let DarkGrayColor: UIColor = UIColor(red: 43/255, green: 43/255, blue: 43/255, alpha: 1)
     
 //    let webHTML = try! String(contentsOfFile: Bundle.main.path(forResource: "testScript", ofType: "html")!, encoding: String.Encoding.utf8)
