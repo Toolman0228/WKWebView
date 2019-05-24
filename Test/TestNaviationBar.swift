@@ -9,8 +9,6 @@
 import UIKit
 
 class TestNaviationBar: UINavigationBar {
-    let DarkGrayColor: UIColor = UIColor(red: 43/255, green: 43/255, blue: 43/255, alpha: 1)
-    
     let navBarImageView: UIImageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 414, height: 44))
 
     /*
@@ -43,7 +41,7 @@ class TestNaviationBar: UINavigationBar {
         
         let visualEffectView = UIVisualEffectView(frame: self.navBarImageView.frame)
         
-        visualEffectView.contentView.backgroundColor = DarkGrayColor
+        visualEffectView.contentView.backgroundColor = UIColor().cusDarkGrayColor()
         
         self.addSubview(visualEffectView)
         
