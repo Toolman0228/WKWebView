@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		18576C0C228CEBAD000A2013 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18576C0B228CEBAD000A2013 /* WebKit.framework */; };
+		18A3524E229B752D0079EF85 /* TestCustomColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18A3524D229B752D0079EF85 /* TestCustomColor.swift */; };
 		18F5A60F2293D26D00DB9743 /* TestNaviationBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18F5A60E2293D26D00DB9743 /* TestNaviationBar.swift */; };
 		18F5A6112293DD3E00DB9743 /* testScript.html in Resources */ = {isa = PBXBuildFile; fileRef = 18F5A6102293DD3E00DB9743 /* testScript.html */; };
 		18FB7788228BC4DE00AC7D83 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18FB7787228BC4DE00AC7D83 /* AppDelegate.swift */; };
@@ -19,6 +20,7 @@
 
 /* Begin PBXFileReference section */
 		18576C0B228CEBAD000A2013 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
+		18A3524D229B752D0079EF85 /* TestCustomColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCustomColor.swift; sourceTree = "<group>"; };
 		18F5A60E2293D26D00DB9743 /* TestNaviationBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestNaviationBar.swift; sourceTree = "<group>"; };
 		18F5A6102293DD3E00DB9743 /* testScript.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = testScript.html; sourceTree = "<group>"; };
 		18FB7784228BC4DE00AC7D83 /* Test.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Test.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -72,6 +74,7 @@
 			children = (
 				18FB7787228BC4DE00AC7D83 /* AppDelegate.swift */,
 				18F5A6102293DD3E00DB9743 /* testScript.html */,
+				18A3524D229B752D0079EF85 /* TestCustomColor.swift */,
 				18F5A60E2293D26D00DB9743 /* TestNaviationBar.swift */,
 				18FB7789228BC4DE00AC7D83 /* ViewController.swift */,
 				18FB778B228BC4DE00AC7D83 /* Main.storyboard */,
@@ -156,6 +159,7 @@
 			files = (
 				18F5A60F2293D26D00DB9743 /* TestNaviationBar.swift in Sources */,
 				18FB778A228BC4DE00AC7D83 /* ViewController.swift in Sources */,
+				18A3524E229B752D0079EF85 /* TestCustomColor.swift in Sources */,
 				18FB7788228BC4DE00AC7D83 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

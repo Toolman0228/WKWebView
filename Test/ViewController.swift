@@ -14,8 +14,6 @@ class ViewController: UIViewController {
     
     @IBOutlet weak var testWebView: WKWebView!
     
-    let testpull = 0
-    
     //    let webHTML = try! String(contentsOfFile: Bundle.main.path(forResource: "testScript", ofType: "html")!, encoding: String.Encoding.utf8)
     // MARK: 不使用 storyBoard，透過 lazy 來創造 WKWebView
     //    lazy var touchBarWebView: WKWebView = {
@@ -76,7 +74,7 @@ class ViewController: UIViewController {
         // 如為 true，UIView 照樣還是可以看見
         testWebView.isOpaque = false
         // webView 背景顏色為深灰色
-        testWebView.backgroundColor = UIColor().cusDarkGrayColor()
+        testWebView.backgroundColor = UIColor().cusDarkGreyColor()
         
     }
     // 讀取 webView 內容
@@ -87,8 +85,8 @@ class ViewController: UIViewController {
         let request = URLRequest(url: webUrl!)
         // 讀取 URL 加載請求
         testWebView.load(request)
-        //        // 加載本地端的 HTML 檔案
-        //        testWebView.loadHTMLString(webHTML, baseURL: nil)
+//        // 加載本地端的 HTML 檔案
+//        testWebView.loadHTMLString(webHTML, baseURL: nil)
         
     }
     
@@ -110,13 +108,14 @@ extension ViewController:  WKNavigationDelegate, WKUIDelegate {
             webView.reload()
             
         }
-        //        // testScript 加載本地端與 javaScript 溝通
-        //        let testJavaScript = "sayHello('touchBarWebView 你好！')"
-        //
-        //        webView.evaluateJavaScript(testJavaScript) { (response, error) in
-        //            print("respones", response ?? "No Response", "errㄟr:", error ?? "No Error")
-        //
-        //        }
+        // testScript 加載本地端與 javaScript 溝通
+//        let testJavaScript = "sayHello('touchBarWebView 你好！')"
+//
+//        webView.evaluateJavaScript(testJavaScript) { (response, error) in
+//
+//            print("respones", response ?? "No Response", "errㄟr:", error ?? "No Error")
+//
+//        }
         
     }
     
@@ -133,12 +132,4 @@ extension ViewController: WKScriptMessageHandler {
     }
     
 }
-// MARK: 自定義顏色
-extension UIColor {
-    // 深灰色
-    func cusDarkGrayColor() -> UIColor {
-        return UIColor(red: 43/255, green: 43/255, blue: 43/255, alpha: 1)
-        
-    }
-    
-}
+
