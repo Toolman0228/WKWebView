@@ -14,6 +14,8 @@ class ViewController: UIViewController {
     
     @IBOutlet weak var testWebView: WKWebView!
     
+    let testpull = 0
+    
     //    let webHTML = try! String(contentsOfFile: Bundle.main.path(forResource: "testScript", ofType: "html")!, encoding: String.Encoding.utf8)
     // MARK: 不使用 storyBoard，透過 lazy 來創造 WKWebView
     //    lazy var touchBarWebView: WKWebView = {
