@@ -13,6 +13,12 @@ import WebKit
 class ViewController: UIViewController {
     
     @IBOutlet weak var testWebView: WKWebView!
+    // WKPreferences(): 封裝 webView 偏好設置，對象由 webView 配置指定
+    lazy var testPerfernces = WKPreferences()
+    // WKUserContentController(): javaScript 提供將消息發佈到 WebView 方法，與 webView 關聯的本地端內容蠅由 webView 配置指定
+    lazy var testUserController = WKUserContentController()
+    // WkWebViewConfiguration(): 用於初始化 webView 屬性集合
+    lazy var testConfiguration = testWebView.configuration
     
     //    let webHTML = try! String(contentsOfFile: Bundle.main.path(forResource: "testScript", ofType: "html")!, encoding: String.Encoding.utf8)
     // MARK: 不使用 storyBoard，透過 lazy 來創造 WKWebView
@@ -58,14 +64,8 @@ class ViewController: UIViewController {
     }
     // 設置 webView 屬性及方法
     func testWebViewAttribute() {
-        // WKPreferences(): 封裝 webView 偏好設置，對象由 webView 配置指定
-        let testPerfernces = WKPreferences()
         // javaScriptEnabled: 是否禁用由網頁加載或執行的 javaScript，默認值為 true
         testPerfernces.javaScriptEnabled = true
-        // WKUserContentController(): javaScript 提供將消息發佈到 WebView 方法，與 webView 關聯的本地端內容蠅由 webView 配置指定
-        let testUserController = WKUserContentController()
-        // WkWebViewConfiguration(): 用於初始化 webView 屬性集合
-        let testConfiguration = testWebView.configuration
         
         testConfiguration.preferences = testPerfernces
         
@@ -128,6 +128,52 @@ extension ViewController: WKScriptMessageHandler {
         print(message.name)
         
         print(message.body)
+        
+    }
+    
+}
+// 自定義 closure，方便多次呼叫
+typealias GetCookiesHandler = ([String: Any]) -> Void
+
+extension WKWebView {
+    // WKHTTPCookieStore: 可以新增、刪除、查詢、監聽變化，管理 cookie
+    // websiteDataStore: 快取等等資料，具體新增、刪除、查詢的方法，websiteDataStore 都有提供方法
+    // WKWebsiteDataStore: 為當前網站所使用各種資料，資料包含 cookie、磁碟、內存、暫存，以及儲存資料
+    // default(): 回傳預設儲存的資料
+    // httpCookieStore: 回傳當前網頁的儲存資料中，包含帶有 httpCookie 的 cookie
+    var testWebViewHttpCookieStore: WKHTTPCookieStore {
+        get {
+            // 寫法 (1)
+            return WKWebsiteDataStore.default().httpCookieStore
+            // 寫法 (2)
+//            return WKWebsiteDataStore.default().httpCookieStore
+            
+        }
+        
+    }
+    // 取得 testWebView cookies
+    func getTestWebViewCookies(for domain: String?, completion: @escaping GetCookiesHandler) {
+        var cookieDict = [String: AnyObject]()
+        
+        testWebViewHttpCookieStore.getAllCookies { cookies in
+            for cookie in cookies {
+                
+                if let domain = domain {
+                    
+                    if(cookie.domain.contains(domain)) {
+                        cookieDict[cookie.name] = cookie.properties as AnyObject?
+                        
+                    }
+                    
+                }else {
+                    cookieDict[cookie.name] = cookie.properties as AnyObject?
+                    
+                }
+                
+            }
+            completion(cookieDict)
+            
+        }
         
     }
     

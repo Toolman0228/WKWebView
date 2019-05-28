@@ -28,6 +28,7 @@ extension Int: NSNumber {
     
     var _Green: CGFloat {
         return  CGFloat(self) / 255
+        
     }
     
     var _Blue: CGFloat {
@@ -43,7 +44,7 @@ extension Int: NSNumber {
 }
 // MARK: 自定義顏色
 extension UIColor {
-    // 次要的初始化，主要是增加 init() 初始化，
+    // 次要的初始化，主要是增加 init() 初始化
     convenience init(R: Int, G: Int, B: Int, A: CGFloat) {
         // 自定義顏色，需要使用 UIColor init() 初始化
         // 使用 onvenience init()，一定要呼叫父類別的 init()
