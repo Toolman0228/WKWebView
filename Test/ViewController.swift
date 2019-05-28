@@ -98,10 +98,27 @@ extension ViewController:  WKNavigationDelegate, WKUIDelegate {
         print("進入加載頁面")
         
     }
+    // webView 接收觸發後，決定是否跳轉頁面
+    func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
+        decisionHandler(.allow)
+        
+    }
     // webView 頁面加載完成
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        
         if(nil != webView.title) {
             print("加載頁面完成")
+            
+            if let url = webView.url {
+                webView.getTestWebViewCookies(for: url.host) { (cookieData) in
+                    print("=========================================")
+                    
+                    print("\(url.absoluteString)")
+                    
+                    print(cookieData)
+                }
+                
+            }
             
         }else {
             // 頁面重新刷新
@@ -153,25 +170,30 @@ extension WKWebView {
     }
     // 取得 testWebView cookies
     func getTestWebViewCookies(for domain: String?, completion: @escaping GetCookiesHandler) {
-        var cookieDict = [String: AnyObject]()
-        
+        // 存放 cookie 資料，是一個 DictionaryArray
+        var cookieDictionaryArray = [String: AnyObject]()
+        // 獲取所有儲存的 cookies
         testWebViewHttpCookieStore.getAllCookies { cookies in
             for cookie in cookies {
-                
+                // 安全型別判斷
                 if let domain = domain {
-                    
-                    if(cookie.domain.contains(domain)) {
-                        cookieDict[cookie.name] = cookie.properties as AnyObject?
+                    // 取得當前網域的 cookie，不為 nil 時，會透過搜尋區分大小寫包含 self 在內，成功會回傳 true (非文字搜索)
+                    if(true == cookie.domain.contains(domain)) {
+                        // properties: 回傳一個 cookie 屬性 DictionaryArray，是唯讀屬性
+                        // 將 cookies.name 放入 cookieDictionaryArray
+                        cookieDictionaryArray[cookie.name] = cookie.properties as AnyObject?
                         
                     }
                     
                 }else {
-                    cookieDict[cookie.name] = cookie.properties as AnyObject?
+                    // 當前網域的 cookie 為 nil，失敗回傳 false
+                    cookieDictionaryArray[cookie.name] = cookie.properties as AnyObject?
                     
                 }
                 
             }
-            completion(cookieDict)
+            // 為逃逸閉包，執行完後，可以再次執行閉包
+            completion(cookieDictionaryArray)
             
         }
         
