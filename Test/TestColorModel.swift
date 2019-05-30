@@ -10,13 +10,13 @@ import UIKit
 
 
 protocol NSNumber {
-    // _Red ReadOnly
+    // _Red Read Only
     var _Red: CGFloat { get }
-    // _Green ReadOnly
+    // _Green Read Only
     var _Green: CGFloat { get }
-    // _Blue ReadOnly
+    // _Blue Read Only
     var _Blue: CGFloat { get }
-    // _Alpha ReadOnly
+    // _Alpha Read Only
     var _Alpha: CGFloat { get }
     
 }

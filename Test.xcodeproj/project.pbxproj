@@ -11,6 +11,7 @@
 		18C6B6D3229E916900BEDACF /* TestColorModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18C6B6D2229E916900BEDACF /* TestColorModel.swift */; };
 		18F5A60F2293D26D00DB9743 /* TestNaviationBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18F5A60E2293D26D00DB9743 /* TestNaviationBar.swift */; };
 		18F5A6112293DD3E00DB9743 /* testScript.html in Resources */ = {isa = PBXBuildFile; fileRef = 18F5A6102293DD3E00DB9743 /* testScript.html */; };
+		18F87260229FAC94008C873A /* CusWebViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18F8725F229FAC94008C873A /* CusWebViewManager.swift */; };
 		18FB7788228BC4DE00AC7D83 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18FB7787228BC4DE00AC7D83 /* AppDelegate.swift */; };
 		18FB778A228BC4DE00AC7D83 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18FB7789228BC4DE00AC7D83 /* ViewController.swift */; };
 		18FB778D228BC4DE00AC7D83 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 18FB778B228BC4DE00AC7D83 /* Main.storyboard */; };
@@ -23,6 +24,7 @@
 		18C6B6D2229E916900BEDACF /* TestColorModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestColorModel.swift; sourceTree = "<group>"; };
 		18F5A60E2293D26D00DB9743 /* TestNaviationBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestNaviationBar.swift; sourceTree = "<group>"; };
 		18F5A6102293DD3E00DB9743 /* testScript.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = testScript.html; sourceTree = "<group>"; };
+		18F8725F229FAC94008C873A /* CusWebViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CusWebViewManager.swift; sourceTree = "<group>"; };
 		18FB7784228BC4DE00AC7D83 /* Test.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Test.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		18FB7787228BC4DE00AC7D83 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		18FB7789228BC4DE00AC7D83 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -74,6 +76,7 @@
 			children = (
 				18FB7787228BC4DE00AC7D83 /* AppDelegate.swift */,
 				18F5A6102293DD3E00DB9743 /* testScript.html */,
+				18F8725F229FAC94008C873A /* CusWebViewManager.swift */,
 				18C6B6D2229E916900BEDACF /* TestColorModel.swift */,
 				18F5A60E2293D26D00DB9743 /* TestNaviationBar.swift */,
 				18FB7789228BC4DE00AC7D83 /* ViewController.swift */,
@@ -158,6 +161,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				18C6B6D3229E916900BEDACF /* TestColorModel.swift in Sources */,
+				18F87260229FAC94008C873A /* CusWebViewManager.swift in Sources */,
 				18F5A60F2293D26D00DB9743 /* TestNaviationBar.swift in Sources */,
 				18FB778A228BC4DE00AC7D83 /* ViewController.swift in Sources */,
 				18FB7788228BC4DE00AC7D83 /* AppDelegate.swift in Sources */,
