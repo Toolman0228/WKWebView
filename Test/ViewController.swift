@@ -57,6 +57,10 @@ class ViewController: UIViewController {
         // Do any additional setup after loading the view.
         webViewModel = CusWebViewManager(webView: testWebView,
                                          webViewURL: testWebView.url)
+        
+        self.testWebView.navigationDelegate = webViewModel
+        
+        self.testWebView.uiDelegate = webViewModel
         // webView 屬性設置
         testWebViewAttribute()
         // 讀取 webView 內容

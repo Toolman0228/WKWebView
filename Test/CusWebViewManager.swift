@@ -11,6 +11,8 @@ import WebKit
 
 // 自定義 closure，方便多次呼叫
 typealias GetCookiesHandler = ([String: Any]) -> Void
+// 自定義 closure，方便多次呼叫
+typealias ReMoveCookiesHandler = (WKWebsiteDataRecord) -> Void
 
 class CusWebViewManager: NSObject {
     weak var webView: WKWebView!
@@ -27,13 +29,21 @@ class CusWebViewManager: NSObject {
         }
         
     }
-    // 網址
+    
+    var webViewDataStore: WKWebsiteDataStore {
+        get {
+            return WKWebsiteDataStore.default()
+            
+        }
+        
+    }
+    // webView 網址
     let webViewURL: URL
-    // 存放 cookie 資料，是一個 DictionaryArray
+    // 存放 webView cookie 資料，是一個 DictionaryArray
     var cookieDictionaryArray: [String: AnyObject]  = [:]
     
     init(webView: WKWebView,
-         webViewURL: URL? = nil) {
+         webViewURL: URL? = nil){
         
         self.webView = webView
         // 安全型別判斷
@@ -46,10 +56,6 @@ class CusWebViewManager: NSObject {
         }
         
         super.init()
-        
-        webView.navigationDelegate = self
-        
-        webView.uiDelegate = self
         
     }
     // 取得 webView cookies
@@ -80,48 +86,69 @@ class CusWebViewManager: NSObject {
         }
         
     }
-    
-    func webViewdeinit() {
-        let dataStore = WKWebsiteDataStore.default()
-        dataStore.fetchDataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes()) { (records) in
+    // 刪除 webView cookies
+    func reMoveWebViewCookies(for domain: String?, completion: @escaping ReMoveCookiesHandler) {
+        // fetchDataRecords(): 取得包含提供 webView data 類型的紀錄
+        // ofTypes: 取得紀錄 webView data 的類型
+        // WKWebsiteDataStore.allWebsiteDataTypes(): 回傳所有可使用 webView data 的類型
+        webViewDataStore.fetchDataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes()) { (records) in
             for record in records {
-                if record.displayName.contains(self.webViewURL.host!) {
-                    dataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), for: [record], completionHandler: {
-                        print("Deleted: " + record.displayName);
-                    })
+                // 安全型別判斷
+                if let domain = domain {
+                    // displayName: webView data 紀錄名稱，通常是網域名稱
+                    if(true == record.displayName.contains(domain)) {
+                        // 為逃逸閉包，執行完後，可以再次執行閉包
+                        completion(record)
+            
+                    }
+
                 }
             }
+
         }
-        
-        
+
     }
     
 }
 // MARK: WKNavigationDelegate、WKUIDelegate 實作
 extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
-    // webView 開始加載
+    // webView 開始載入
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-        print("進入加載頁面")
+        
         
     }
-    // webView 接收觸發後，決定是否跳轉頁面
+    // webView 收到伺服器響應頭呼叫，包含 response 的相關資訊，回撥決定是否跳轉
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
         decisionHandler(.allow)
         
     }
-    // webView 頁面加載完成
+    // webView 加載完成
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         
         if(nil != webView.title) {
-            print("加載頁面完成")
-            // 取得 webView cookies
-            // url.host: 針對基本的 url 解析，如果 webView.url 不為 nil，回傳主機端 url
-            getWebViewCookies(for: webViewURL.host) { (data) in
+            
+            DispatchQueue.main.async {
+                // 取得 webView cookies
+                // url.host: 針對基本的 url 解析，如果 webView.url 不為 nil，回傳主機端 url
+                self.getWebViewCookies(for: self.webViewURL.host) { (cookieData) in
+                    print("\(self.webViewURL.absoluteString)")
 
-                print("\(self.webViewURL.absoluteString)")
+                    print(cookieData)
 
-                print(data)
+                }
+                // 刪除 webView cookies
+                self.reMoveWebViewCookies(for: self.webViewURL.host) { (recordData) in
+                    // removeData(): 刪除提供 webView 紀錄的類型及 data
+                    // ofTypes: 刪除 webView data 的類型
+                    // for: 刪除 webView data 的紀錄
+                    // completionHandler: 刪除 webView data 的紀錄時，需要做什麼事情，為逃逸閉包
+                    self.webViewDataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), for: [recordData], completionHandler: {
+                        print("Delete: \(recordData.displayName)")
 
+                    })
+
+                }
+                
             }
             
         }else {
@@ -129,7 +156,7 @@ extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
             webView.reload()
             
         }
-        // testScript 加載本地端與 javaScript 溝通
+//        // testScript 加載本地端與 javaScript 溝通
 //        let testJavaScript = "sayHello('touchBarWebView 你好！')"
 //
 //        webView.evaluateJavaScript(testJavaScript) { (response, error) in
@@ -138,8 +165,18 @@ extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
 //        }
         
     }
+    // webView 開始載入時，出現錯誤
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        NSLog("WebView Loading Error: \(error.localizedDescription)")
+        
+    }
+    // 記憶體佔用過大等原因，造成網頁載入中斷時，使用該方法
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        // 頁面重新刷新
+        webView.reload()
+        
+    }
    
-    
 }
 // MARK: WKScriptMessageHandler 實作
 extension ViewController: WKScriptMessageHandler {
