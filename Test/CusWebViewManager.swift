@@ -10,7 +10,7 @@ import UIKit
 import WebKit
 
 // 自定義 closure，方便多次呼叫
-typealias GetCookiesHandler = ([String: Any]) -> Void
+typealias GetCookiesHandler = (_ cookieData: [String: Any]?, _ success: Bool) -> Void
 // 自定義 closure，方便多次呼叫
 typealias ReMoveCookiesHandler = (WKWebsiteDataRecord) -> Void
 
@@ -37,6 +37,17 @@ class CusWebViewManager: NSObject {
         }
         
     }
+    // webView cookie 儲存本地端
+    var webViewCookieUserDefaults: UserDefaults {
+        get {
+            return UserDefaults.standard
+            
+        }
+        
+    }
+    
+    // 判斷是否成功取得 cookie
+    var success: Bool
     // webView 網址
     let webViewURL: URL
     // 存放 webView cookie 資料，是一個 DictionaryArray
@@ -44,6 +55,7 @@ class CusWebViewManager: NSObject {
     
     init(webView: WKWebView,
          webViewURL: URL? = nil){
+        success = false
         
         self.webView = webView
         // 安全型別判斷
@@ -54,7 +66,6 @@ class CusWebViewManager: NSObject {
             self.webViewURL = URL(string: "https://touchbar.tw")!
             
         }
-        
         super.init()
         
     }
@@ -62,6 +73,9 @@ class CusWebViewManager: NSObject {
     func getWebViewCookies(for domain: String?, completion: @escaping GetCookiesHandler)  {
         // 獲取所有儲存的 cookies
         webViewHttpCookieStore.getAllCookies { cookies in
+            // 儲存 cookie 於本地端
+            self.saveCookiesUserDefaults(cookies)
+            
             for cookie in cookies {
                 // 安全型別判斷
                 if let domain = domain {
@@ -70,18 +84,22 @@ class CusWebViewManager: NSObject {
                         // properties: 回傳一個 cookie 屬性 DictionaryArray，是唯讀屬性
                         // 將 cookies.name 放入 cookieDictionaryArray
                         self.cookieDictionaryArray[cookie.name] = cookie.properties as AnyObject?
+                        // 成功取得 cookie
+                        self.success = true
                         
                     }
                     
                 }else {
                     // 當前網域的 cookie 為 nil，失敗回傳 false
                     self.cookieDictionaryArray[cookie.name] = cookie.properties as AnyObject?
+                    // 無法取得 cookie
+                    self.success = false
                     
                 }
                 
             }
             // 為逃逸閉包，執行完後，可以再次執行閉包
-            completion(self.cookieDictionaryArray)
+            completion(self.cookieDictionaryArray, self.success)
             
         }
         
@@ -108,15 +126,28 @@ class CusWebViewManager: NSObject {
         }
 
     }
+    // 儲存 cookie 於本地端
+    func saveCookiesUserDefaults(_ saveData: [HTTPCookie]) -> Void {
+        // 序列化資料，通過 archivedData 方法，轉為可以儲存資料的型別
+        let saveCookiesData = try! NSKeyedArchiver.archivedData(withRootObject: saveData, requiringSecureCoding: false)
+        
+        webViewCookieUserDefaults.set(saveCookiesData, forKey: "saveCookies")
+        
+    }
+    // 讀取 cookie 於本地端
+    func loadCookiesUserDefaults() -> Void {
+        // 取出 webViewCookieUserDefaults 儲存資料
+        if let fechCookiesData = webViewCookieUserDefaults.data(forKey: "saveCookies") {
+            // loadCookiesData
+            let _ = try! NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(fechCookiesData) as! [HTTPCookie]
+            
+        }
+
+    }
     
 }
 // MARK: WKNavigationDelegate、WKUIDelegate 實作
 extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
-    // webView 開始載入
-    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-        
-        
-    }
     // webView 收到伺服器響應頭呼叫，包含 response 的相關資訊，回撥決定是否跳轉
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
         decisionHandler(.allow)
@@ -124,33 +155,32 @@ extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
     }
     // webView 加載完成
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        
         if(nil != webView.title) {
-            
-            DispatchQueue.main.async {
-                // 取得 webView cookies
-                // url.host: 針對基本的 url 解析，如果 webView.url 不為 nil，回傳主機端 url
-                self.getWebViewCookies(for: self.webViewURL.host) { (cookieData) in
-                    print("\(self.webViewURL.absoluteString)")
-
-                    print(cookieData)
-
-                }
-                // 刪除 webView cookies
-                self.reMoveWebViewCookies(for: self.webViewURL.host) { (recordData) in
-                    // removeData(): 刪除提供 webView 紀錄的類型及 data
-                    // ofTypes: 刪除 webView data 的類型
-                    // for: 刪除 webView data 的紀錄
-                    // completionHandler: 刪除 webView data 的紀錄時，需要做什麼事情，為逃逸閉包
-                    self.webViewDataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), for: [recordData], completionHandler: {
-                        print("Delete: \(recordData.displayName)")
-
-                    })
+            loadCookiesUserDefaults()
+            // 取得 webView cookies
+            // url.host: 針對基本的 url 解析，如果 webView.url 不為 nil，回傳主機端 url
+            self.getWebViewCookies(for: self.webViewURL.host) { (cookieData, success) in
+                if(false != success) {
+//                    print("\(self.webViewURL.absoluteString)")
+//
+//                    print(cookieData!)
 
                 }
-                
+
             }
-            
+            // 刪除 webView cookies
+            self.reMoveWebViewCookies(for: self.webViewURL.host) { (recordData) in
+                // removeData(): 刪除提供 webView 紀錄的類型及 data
+                // ofTypes: 刪除 webView data 的類型
+                // for: 刪除 webView data 的紀錄
+                // completionHandler: 刪除 webView data 的紀錄時，需要做什麼事情，為逃逸閉包
+                self.webViewDataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), for: [recordData], completionHandler: {
+                    print("Delete: \(recordData.displayName)")
+
+                })
+
+            }
+
         }else {
             // 頁面重新刷新
             webView.reload()
