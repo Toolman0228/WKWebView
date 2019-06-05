@@ -13,14 +13,30 @@ import WebKit
 class ViewController: UIViewController {
     
     @IBOutlet weak var testWebView: WKWebView!
+    
+    var webViewModel: CusWebViewManager!
     // WKPreferences(): 封裝 webView 偏好設置，對象由 webView 配置指定
     lazy var testPerfernces = WKPreferences()
     // WKUserContentController(): javaScript 提供將消息發佈到 WebView 方法，與 webView 關聯的本地端內容蠅由 webView 配置指定
     lazy var testUserController = WKUserContentController()
     // WkWebViewConfiguration(): 用於初始化 webView 屬性集合
-    lazy var testConfiguration = testWebView.configuration
-    
-    var webViewModel: CusWebViewManager!
+    var testConfiguration: WKWebViewConfiguration {
+        get {
+            return testWebView.configuration
+            
+        }
+        
+    }
+    // 指定加載網址，網址型別為字串，轉型為 URL
+    var webUrl: URL? {
+        get {
+            return URL(string: "http://my-gamer.com/page8")
+            
+//            print("https://githu.com/334343ew")
+            
+        }
+        
+    }
     
     //    let webHTML = try! String(contentsOfFile: Bundle.main.path(forResource: "testScript", ofType: "html")!, encoding: String.Encoding.utf8)
     // MARK: 不使用 storyBoard，透過 lazy 來創造 WKWebView
@@ -56,7 +72,7 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         webViewModel = CusWebViewManager(webView: testWebView,
-                                         webViewURL: testWebView.url)
+                                         webViewURL: webUrl)
         
         self.testWebView.navigationDelegate = webViewModel
         
@@ -74,8 +90,9 @@ class ViewController: UIViewController {
         testPerfernces.javaScriptEnabled = true
         
         testConfiguration.preferences = testPerfernces
-        
+       
         testConfiguration.userContentController = testUserController
+    
         // isOpaque: 表示 UIView 是否透明，但不表示當前 UIView 是不是不透明
         // 如為 true，UIView 照樣還是可以看見
         testWebView.isOpaque = false
@@ -85,8 +102,6 @@ class ViewController: UIViewController {
     }
     // 讀取 webView 內容
     func loadTestWebViewUrl() {
-        // 指定加載網址，網址型別為字串，轉型為 URL
-        let webUrl = URL(string: "https://touchbar.tw")
         // URL 加載請求
         let request = URLRequest(url: webUrl!)
         // 讀取 URL 加載請求
@@ -97,4 +112,11 @@ class ViewController: UIViewController {
     }
 
 }
+
+//extension WKWebViewConfiguration {
+//    func add(script: WKUserScript.Defined, scriptMessageHandler: WKScriptMessageHandler) {
+//        userContentController.addUserScript(script.create())
+//        userContentController.add(scriptMessageHandler, name: script.name)
+//    }
+//}
 

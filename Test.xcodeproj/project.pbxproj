@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		180BB28022A7AA4200FA5AF9 /* InternetConnectionDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180BB27F22A7AA4200FA5AF9 /* InternetConnectionDataManager.swift */; };
 		18576C0C228CEBAD000A2013 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18576C0B228CEBAD000A2013 /* WebKit.framework */; };
 		18C6B6D3229E916900BEDACF /* TestColorModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18C6B6D2229E916900BEDACF /* TestColorModel.swift */; };
 		18F5A60F2293D26D00DB9743 /* TestNaviationBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18F5A60E2293D26D00DB9743 /* TestNaviationBar.swift */; };
@@ -20,6 +21,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		180BB27F22A7AA4200FA5AF9 /* InternetConnectionDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternetConnectionDataManager.swift; sourceTree = "<group>"; };
 		18576C0B228CEBAD000A2013 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		18C6B6D2229E916900BEDACF /* TestColorModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestColorModel.swift; sourceTree = "<group>"; };
 		18F5A60E2293D26D00DB9743 /* TestNaviationBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestNaviationBar.swift; sourceTree = "<group>"; };
@@ -76,6 +78,7 @@
 			children = (
 				18FB7787228BC4DE00AC7D83 /* AppDelegate.swift */,
 				18F5A6102293DD3E00DB9743 /* testScript.html */,
+				180BB27F22A7AA4200FA5AF9 /* InternetConnectionDataManager.swift */,
 				18F8725F229FAC94008C873A /* CusWebViewManager.swift */,
 				18C6B6D2229E916900BEDACF /* TestColorModel.swift */,
 				18F5A60E2293D26D00DB9743 /* TestNaviationBar.swift */,
@@ -160,6 +163,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				180BB28022A7AA4200FA5AF9 /* InternetConnectionDataManager.swift in Sources */,
 				18C6B6D3229E916900BEDACF /* TestColorModel.swift in Sources */,
 				18F87260229FAC94008C873A /* CusWebViewManager.swift in Sources */,
 				18F5A60F2293D26D00DB9743 /* TestNaviationBar.swift in Sources */,
