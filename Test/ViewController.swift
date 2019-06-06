@@ -30,7 +30,7 @@ class ViewController: UIViewController {
     // 指定加載網址，網址型別為字串，轉型為 URL
     var webUrl: URL? {
         get {
-            return URL(string: "http://my-gamer.com/page8")
+            return URL(string: "https://githu.com/334343ew")
             
 //            print("https://githu.com/334343ew")
             
