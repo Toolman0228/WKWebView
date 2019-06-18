@@ -37,7 +37,7 @@ class TestNaviationBar: UINavigationBar {
         
     }
     
-    func testNavBarFrame() {
+    func testNavBarFrame() -> Void {
         
         let visualEffectView = UIVisualEffectView(frame: self.navBarImageView.frame)
         

@@ -15,6 +15,8 @@ class ViewController: UIViewController {
     @IBOutlet weak var testWebView: WKWebView!
     
     var webViewModel: CusWebViewManager!
+    
+    var webviewNetWorkModel: NetWorkManager!
     // WKPreferences(): 封裝 webView 偏好設置，對象由 webView 配置指定
     lazy var testPerfernces = WKPreferences()
     // WKUserContentController(): javaScript 提供將消息發佈到 WebView 方法，與 webView 關聯的本地端內容蠅由 webView 配置指定
@@ -23,16 +25,6 @@ class ViewController: UIViewController {
     var testConfiguration: WKWebViewConfiguration {
         get {
             return testWebView.configuration
-            
-        }
-        
-    }
-    // 指定加載網址，網址型別為字串，轉型為 URL
-    var webUrl: URL? {
-        get {
-            return URL(string: "https://githu.com/334343ew")
-            
-//            print("https://githu.com/334343ew")
             
         }
         
@@ -71,8 +63,9 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
-        webViewModel = CusWebViewManager(webView: testWebView,
-                                         webViewURL: webUrl)
+        webViewModel = CusWebViewManager(webView: testWebView)
+        
+        webviewNetWorkModel = NetWorkManager.shared!
         
         self.testWebView.navigationDelegate = webViewModel
         
@@ -85,7 +78,7 @@ class ViewController: UIViewController {
     }
     // MARK: 設置 webView 屬性及方法
     // webView 屬性設置
-    func testWebViewAttribute() {
+    func testWebViewAttribute() -> Void {
         // javaScriptEnabled: 是否禁用由網頁加載或執行的 javaScript，默認值為 true
         testPerfernces.javaScriptEnabled = true
         
@@ -101,9 +94,9 @@ class ViewController: UIViewController {
         
     }
     // 讀取 webView 內容
-    func loadTestWebViewUrl() {
+    func loadTestWebViewUrl() -> Void {
         // URL 加載請求
-        let request = URLRequest(url: webUrl!)
+        let request = URLRequest(url: webviewNetWorkModel.netWorkURL)
         // 讀取 URL 加載請求
         testWebView.load(request)
         // 加載本地端的 HTML 檔案

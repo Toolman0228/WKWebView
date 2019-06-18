@@ -19,7 +19,6 @@ class CusWebViewManager: NSObject {
     weak var webView: WKWebView!
     // Read Only
     // WKHTTPCookieStore: 可以新增、刪除、查詢、監聽變化，管理 cookie
-    // websiteDataStore: 快取等等資料，具體新增、刪除、查詢的方法，websiteDataStore 都有提供方法
     // WKWebsiteDataStore: 為當前網站所使用各種資料，資料包含 cookie、磁碟、內存、暫存，以及儲存資料
     // default(): 回傳預設儲存的資料
     // httpCookieStore: 回傳當前網頁的儲存資料中，包含帶有 httpCookie 的 cookie
@@ -30,7 +29,7 @@ class CusWebViewManager: NSObject {
         }
         
     }
-    
+    // websiteDataStore: 快取等等資料，具體新增、刪除、查詢的方法，websiteDataStore 都有提供方法
     var webViewDataStore: WKWebsiteDataStore {
         get {
             return WKWebsiteDataStore.default()
@@ -48,29 +47,23 @@ class CusWebViewManager: NSObject {
     }
     // 判斷是否成功取得 cookie
     var success: Bool
-    // webView 網址
-    let webViewURL: URL
     // 存放 webView cookie 資料，是一個 DictionaryArray
     var cookieDictionaryArray: [String: AnyObject]  = [:]
     
-    init(webView: WKWebView,
-         webViewURL: URL? = nil){
+    var netWorkModel: NetWorkManager!
+
+    init(webView: WKWebView){
         success = false
         
         self.webView = webView
-        // 安全型別判斷
-        if let webViewURL = webViewURL {
-            self.webViewURL = webViewURL
-            
-        }else {
-            self.webViewURL = URL(string: "https://touchbar.tw")!
-            
-        }
+
         super.init()
+        
+        netWorkModel =  NetWorkManager.shared
         
     }
     // 取得 webView cookies
-    func getWebViewCookies(for domain: String?, getCompletion: @escaping GetCookiesHandler)  {
+    func getWebViewCookies(for domain: String?, getCompletion: @escaping GetCookiesHandler) -> Void {
         // 獲取所有儲存的 cookies
         webViewHttpCookieStore.getAllCookies { cookies in
 //            // 儲存 cookie 於本地端
@@ -105,7 +98,7 @@ class CusWebViewManager: NSObject {
         
     }
     // 刪除 webView cookies
-    func deleteWebViewCookies(for domain: String?, deleteCompletion: @escaping deleteCookiesHandler) {
+    func deleteWebViewCookies(for domain: String?, deleteCompletion: @escaping deleteCookiesHandler) -> Void {
         // fetchDataRecords(): 取得包含提供 webView data 類型的紀錄
         // ofTypes: 取得紀錄 webView data 的類型
         // WKWebsiteDataStore.allWebsiteDataTypes(): 回傳所有可使用 webView data 的類型
@@ -146,33 +139,42 @@ class CusWebViewManager: NSObject {
 
     }
     // 檢查是否有開起網路
-    func isConnectedToNetwork() -> Bool {
-        
-        var zeroAddress = sockaddr_in()
-        zeroAddress.sin_len = UInt8(MemoryLayout.size(ofValue: zeroAddress))
-        zeroAddress.sin_family = sa_family_t(AF_INET)
-        
-        let defaultRouteReachability = withUnsafePointer(to: &zeroAddress) {
-            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {zeroSockAddress in
-                SCNetworkReachabilityCreateWithAddress(nil, zeroSockAddress)
-            }
-        }
-        
-        var flags = SCNetworkReachabilityFlags()
-        if !SCNetworkReachabilityGetFlags(defaultRouteReachability!, &flags) {
-            return false
-        }
-        let isReachable = (flags.rawValue & UInt32(kSCNetworkFlagsReachable)) != 0
-        let needsConnection = (flags.rawValue & UInt32(kSCNetworkFlagsConnectionRequired)) != 0
-        return (isReachable && !needsConnection)
-        
-    }
+//    func isConnectedToNetwork() -> Bool {
+//
+//        var zeroAddress = sockaddr_in()
+//        zeroAddress.sin_len = UInt8(MemoryLayout.size(ofValue: zeroAddress))
+//        zeroAddress.sin_family = sa_family_t(AF_INET)
+//
+//        let defaultRouteReachability = withUnsafePointer(to: &zeroAddress) {
+//            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {zeroSockAddress in
+//                SCNetworkReachabilityCreateWithAddress(nil, zeroSockAddress)
+//            }
+//        }
+//
+//        var flags = SCNetworkReachabilityFlags()
+//        if !SCNetworkReachabilityGetFlags(defaultRouteReachability!, &flags) {
+//            return false
+//        }
+//        let isReachable = (flags.rawValue & UInt32(kSCNetworkFlagsReachable)) != 0
+//        let needsConnection = (flags.rawValue & UInt32(kSCNetworkFlagsConnectionRequired)) != 0
+//        return (isReachable && !needsConnection)
+//
+//    }
     
 }
 // MARK: WKNavigationDelegate、WKUIDelegate 實作
 extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
         
+        netWorkModel.webViewPostData(for: netWorkModel.netWorkURL) { (result, sysss) in
+            switch result {
+            case .failure(let error):
+                print(error)
+                
+            }
+            
+        }
+
     }
     // webView 收到伺服器響應頭呼叫，包含 response 的相關資訊，回撥決定是否跳轉
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
@@ -184,11 +186,11 @@ extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
         if(nil != webView.title) {
             // 取得 webView cookies
             // url.host: 針對基本的 url 解析，如果 webView.url 不為 nil，回傳主機端 url
-            self.getWebViewCookies(for: self.webViewURL.host) { (cookieData, success) in
+            self.getWebViewCookies(for: netWorkModel.netWorkURL.host) { (cookieData, success) in
                 if(false != success) {
-//                    print("\(self.webViewURL.absoluteString)")
-//
-//                    print(cookieData!)
+                    print("\(self.netWorkModel.netWorkURL.absoluteString)")
+
+                    print(cookieData!)
 
                 }else {
                     print("取得失敗")
@@ -197,17 +199,17 @@ extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
 
             }
             // 刪除 webView cookies
-//            self.deleteWebViewCookies(for: self.webViewURL.host) { (recordData) in
-//                // removeData(): 刪除提供 webView 紀錄的類型及 data
-//                // ofTypes: 刪除 webView data 的類型
-//                // for: 刪除 webView data 的紀錄
-//                // completionHandler: 刪除 webView data 的紀錄時，需要做什麼事情，為逃逸閉包
-//                self.webViewDataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), for: [recordData], completionHandler: {
-//                    print("Delete: \(recordData.displayName)")
-//
-//                })
-//
-//            }
+            self.deleteWebViewCookies(for: netWorkModel.netWorkURL.host) { (recordData) in
+                // removeData(): 刪除提供 webView 紀錄的類型及 data
+                // ofTypes: 刪除 webView data 的類型
+                // for: 刪除 webView data 的紀錄
+                // completionHandler: 刪除 webView data 的紀錄時，需要做什麼事情，為逃逸閉包
+                self.webViewDataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), for: [recordData], completionHandler: {
+                    print("Delete: \(recordData.displayName)")
+
+                })
+
+            }
 
         }else {
             // 頁面重新刷新
@@ -232,11 +234,6 @@ extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
     // webView 開始載入時，出現錯誤
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         // 出現錯誤，停止加載網頁所有資源
-        self.webViewPostdata(for: webViewURL) { (sucess) in
-            print("網頁載入狀態為 \(sucess)")
-            
-        }
-        
         webView.stopLoading()
         
         print("停止")
@@ -248,7 +245,7 @@ extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
 }
 // MARK: WKScriptMessageHandler 實作
 //extension ViewController: WKScriptMessageHandler {
-
+//
 //    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
 //        // 從 javaScript 回傳過來的 string data
 //        print(message.name)
@@ -265,9 +262,9 @@ extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
 //        }
 //
 //    }
-
+//
 //}
-
+//
 //extension WKUserScript {
 //    enum Defined: String {
 //        case getUrlAtDocumentStartScript = "GetUrlAtDocumentStart"
@@ -302,5 +299,6 @@ extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
 //                                forMainFrameOnly: forMainFrameOnly)
 //        }
 //    }
+//    
 //}
 

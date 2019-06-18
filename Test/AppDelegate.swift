@@ -16,6 +16,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        let netWorkManager: NetWorkManager = NetWorkManager(netWorkURL: URL(string: "https://jsonplaceholder.typicode.com/todos/1")!)
+        
+        NetWorkManager.setAsSingleton(instance: netWorkManager)
+        
         return true
     }
 
