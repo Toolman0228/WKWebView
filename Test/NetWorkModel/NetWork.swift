@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import WebKit
 // NetWorkError 接收資料狀態錯誤
 // enum 列舉: 為自定義一個型別，列舉出一組相關的值，可搭配 switch 使用
 enum NetWorkError: Error {
@@ -27,18 +28,35 @@ enum RequestResult<T> {
 }
 
 class NetWork<T: Codable>: NSObject {
+    // Read Only
     // HTTP 狀態碼範圍，狀態碼不為 2XX 範圍，伺服器未成功接收要求，如有在範圍內，伺服器成功接收到客戶端、理解客戶端、以及接受客戶端要求
     var statusCodeRange: ClosedRange<Int> {
         return (200 ... 299)
         
     }
+    // Read Only
+    // WKHTTPCookieStore: 可以新增、刪除、查詢、監聽變化，管理 cookie
+    // WKWebsiteDataStore: 為當前網站所使用各種資料，資料包含 cookie、磁碟、內存、暫存，以及儲存資料
+    // default(): 回傳預設儲存的資料
+    // httpCookieStore: 回傳當前網頁的儲存資料中，包含帶有 httpCookie 的 cookie
+    var webViewHttpCookieStore: WKHTTPCookieStore {
+        get {
+            return WKWebsiteDataStore.default().httpCookieStore
+            
+        }
+        
+    }
     // 指定加載網址
     let netWorkURL: URL
-    // 接收 data 回傳資料的訊息參數
+    // 接收回傳資料訊息參數
     var netWorkDataTaskData: Data
-    // 接收 task 回傳錯誤的訊息參數
+    // 接收回傳請求訊息參數
     var netWorkDataTaskResponse: String
-    // 初始化
+    // 存放 webView cookie 資料，是一個 Dictionary
+    var cookieDictionaryArray: Dictionary<String, AnyObject>
+    // 判斷是否成功取得 cookie
+    var success: Bool
+    
     init(netWorkURL: URL,
          netWorkDataTaskData: Data? = nil,
          netWorkDataTaskResponse: String? = nil) {
@@ -60,13 +78,18 @@ class NetWork<T: Codable>: NSObject {
             self.netWorkDataTaskResponse = "載入中"
             
         }
+        
+        cookieDictionaryArray = [:]
+      
+        success = false
+        
         super.init()
         
     }
     // 自定義 closure { }，主要為檢查伺服器狀態是否成功接收要求，設置為逃逸閉包，方便多次呼叫
     typealias RequestResultHandler = (_ result: RequestResult<Codable>, _ success: Bool) -> Void
     // 回傳 webView 資料
-    func webViewPostData(for url: URL, ResultCompletion: @escaping RequestResultHandler) -> Void {
+    func webViewRequestData(for url: URL, ResultCompletion: @escaping RequestResultHandler) -> Void {
         // URL 加載請求
         let postURLRequest = URLRequest(url: netWorkURL, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 60)
         // 設置 URLRequest 請求方法為 Post
@@ -75,8 +98,11 @@ class NetWork<T: Codable>: NSObject {
         // URLSession: 處理相關 webView data 傳輸任務的物件，，與客戶端與伺服器之間保持狀態的解決方案 URLRequest 會夾帶參數進去，傳出去的方式為 task
         // shared: 使用單例模式，在登入新帳號時，只需要初始化一次就好，可以讓 APP 拿到同一個 instance，讓其他的程式可以共用
         // dataTask: 透過 webViewPostURL，取得 webViewPostURL 回傳資料、錯誤資訊，需要調用此方法時，才執行，是一個逃逸閉包，當所有 func 執行完，才會執行到閉包裡的程式碼
+        // data: task 回傳資料訊息參數
+        // response: task 回傳請求信息，發送網路請求時，如果請求成功，會接收到客戶端的回傳訊息，直接開始接收回傳的資料
+        // error: task 回傳錯誤訊息參數
         let webViewDataTask = URLSession.shared.dataTask(with: postURLRequest as URLRequest) { (data, response, error) in
-            // data: data 回傳資料的訊息參數
+            // task 回傳資料訊息參數
             guard let data = data else {
                 // 自定義 closure { }，主要為檢查伺服器狀態是否成功接收要求，設置為逃逸閉包，方便多次呼叫
                 ResultCompletion(RequestResult.failure(NetWorkError.dataInfoError), false)
@@ -84,9 +110,9 @@ class NetWork<T: Codable>: NSObject {
                 return
                 
             }
-            // 接收 data 回傳資料的訊息參數
+            // 接收回傳資料訊息參數
             self.netWorkDataTaskData = data
-            // error: task 回傳錯誤的訊息參數
+            // task 回傳錯誤訊息參數
             guard error == nil else {
                 // 自定義 closure { }，主要為檢查伺服器狀態是否成功接收要求，設置為逃逸閉包，方便多次呼叫
                 ResultCompletion(RequestResult.failure(NetWorkError.netWorkError(error!.localizedDescription)), false)
@@ -94,14 +120,16 @@ class NetWork<T: Codable>: NSObject {
                 return
                 
             }
-            // 回傳的訊息結果
+            // 回傳請求 data 轉為字串格式
             guard let responseString = String(data: self.netWorkDataTaskData, encoding: .utf8) else {
                 return
                 
             }
-            // task 回傳 HTTP 狀態碼，取得伺服器端 HTTP Respones 狀態
-            // response:
+            // task 回傳 HTTP 狀態碼，取得伺服器端 HTTPRespones 狀態
+            // task 回傳請求信息，發送網路請求時，如果請求成功，會接收到客戶端的回傳訊息，直接開始接收回傳的資料
+            // HTTPURLResponse: 對 HTTP 請求，回傳被封裝為 HTTPURLResponse 的型別
             if let webViewHTTPStatus = response as? HTTPURLResponse  {
+                // 判斷伺服器端 HTTPRespones 狀態是否連線正常
                 if(true != self.statusCodeRange.contains(webViewHTTPStatus.statusCode)) {
                     // 自定義 closure { }，主要為檢查伺服器狀態是否成功接收要求，設置為逃逸閉包，方便多次呼叫
                     ResultCompletion(RequestResult.failure(NetWorkError.httpStatusCode(webViewHTTPStatus.statusCode)), self.statusCodeRange.contains(webViewHTTPStatus.statusCode))
@@ -113,11 +141,11 @@ class NetWork<T: Codable>: NSObject {
                 }else {
                     // 自定義 closure { }，主要為檢查伺服器狀態是否成功接收要求，設置為逃逸閉包，方便多次呼叫
                     ResultCompletion(RequestResult.failure(NetWorkError.httpStatusCode(webViewHTTPStatus.statusCode)), self.statusCodeRange.contains(webViewHTTPStatus.statusCode))
-                    
-                    self.netWorkDataTaskResponse = response.debugDescription
-                    
-                    print(self.netWorkDataTaskResponse)
-                    
+                    // 接收回傳請求訊息參數
+                    // description: 程序中打印出 Log 調用的方法
+                    // debugDescription: 進行斷點測試時，可以在除錯視窗輸入 po 的語法，來打印出調用的方法
+                    self.netWorkDataTaskResponse = response!.description
+    
                 }
                 
             }
@@ -129,8 +157,45 @@ class NetWork<T: Codable>: NSObject {
         webViewDataTask.resume()
         
     }
+    // 自定義 closure，主要為取得 cookies 是否成功，設置為逃逸閉包，方便多次呼叫
+    typealias GetCookiesHandler = (_ cookieData: [String: Any]?, _ success: Bool) -> Void
+    // 取得 webView cookies
+    func getWebViewCookies(_ getCompletion: @escaping GetCookiesHandler) -> Void {
+        // 獲取所有儲存的 cookies
+        webViewHttpCookieStore.getAllCookies { cookies in
+            // 儲存 cookie 於本地端
+            // self.saveCookiesUserDefaults(cookies)
+            
+            for cookie in cookies {
+                // 安全型別判斷
+                if let domain = self.netWorkURL.host {
+                    // 取得當前網域的 cookie，不為 nil 時，會透過搜尋區分大小寫包含 self 在內，成功會回傳 true (非文字搜索)
+                    if(true == cookie.domain.contains(domain)) {
+                        // properties: 回傳一個 cookie 屬性 DictionaryArray，是唯讀屬性
+                        // 將 cookies.name 放入 cookieDictionaryArray
+                        self.cookieDictionaryArray[cookie.name] = cookie.properties as AnyObject?
+                        // 成功取得 cookie
+                        self.success = true
+                        
+                    }
+                    
+                }else {
+                    // 當前網域的 cookie 為 nil，失敗回傳 false
+                    self.cookieDictionaryArray[cookie.name] = cookie.properties as AnyObject?
+                    // 無法取得 cookie
+                    self.success = false
+                    
+                }
+                
+            }
+            // 為逃逸閉包，執行完後，可以再次執行閉包
+            getCompletion(self.cookieDictionaryArray, self.success)
+            
+        }
+        
+    }
     // json 格式解碼
-    func woebViewJsonDecoder(object: T.Type) -> T? {
+    func webViewJsonDecoder(_ object: T.Type) -> T? {
         
         do {
             // 類別初始化程序宣告為 decoder 物件
@@ -150,5 +215,10 @@ class NetWork<T: Codable>: NSObject {
         return nil
         
     }
+    // json 格式編碼
+    func webViewJsonEncoder() {
+        
+    }
+    
     
 }

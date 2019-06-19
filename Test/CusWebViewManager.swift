@@ -11,24 +11,11 @@ import WebKit
 import SystemConfiguration
 
 // 自定義 closure，方便多次呼叫
-typealias GetCookiesHandler = (_ cookieData: [String: Any]?, _ success: Bool) -> Void
-// 自定義 closure，方便多次呼叫
 typealias deleteCookiesHandler = (WKWebsiteDataRecord) -> Void
 
 class CusWebViewManager: NSObject {
     weak var webView: WKWebView!
     // Read Only
-    // WKHTTPCookieStore: 可以新增、刪除、查詢、監聽變化，管理 cookie
-    // WKWebsiteDataStore: 為當前網站所使用各種資料，資料包含 cookie、磁碟、內存、暫存，以及儲存資料
-    // default(): 回傳預設儲存的資料
-    // httpCookieStore: 回傳當前網頁的儲存資料中，包含帶有 httpCookie 的 cookie
-    var webViewHttpCookieStore: WKHTTPCookieStore {
-        get {
-            return WKWebsiteDataStore.default().httpCookieStore
-            
-        }
-        
-    }
     // websiteDataStore: 快取等等資料，具體新增、刪除、查詢的方法，websiteDataStore 都有提供方法
     var webViewDataStore: WKWebsiteDataStore {
         get {
@@ -37,6 +24,7 @@ class CusWebViewManager: NSObject {
         }
         
     }
+    // Read Only
     // webView cookie 儲存本地端
     var webViewCookieUserDefaults: UserDefaults {
         get {
@@ -45,56 +33,18 @@ class CusWebViewManager: NSObject {
         }
         
     }
-    // 判斷是否成功取得 cookie
-    var success: Bool
     // 存放 webView cookie 資料，是一個 DictionaryArray
     var cookieDictionaryArray: [String: AnyObject]  = [:]
     
     var netWorkModel: NetWorkManager!
 
     init(webView: WKWebView){
-        success = false
         
         self.webView = webView
 
         super.init()
         
         netWorkModel =  NetWorkManager.shared
-        
-    }
-    // 取得 webView cookies
-    func getWebViewCookies(for domain: String?, getCompletion: @escaping GetCookiesHandler) -> Void {
-        // 獲取所有儲存的 cookies
-        webViewHttpCookieStore.getAllCookies { cookies in
-//            // 儲存 cookie 於本地端
-//            self.saveCookiesUserDefaults(cookies)
-            
-            for cookie in cookies {
-                // 安全型別判斷
-                if let domain = domain {
-                    // 取得當前網域的 cookie，不為 nil 時，會透過搜尋區分大小寫包含 self 在內，成功會回傳 true (非文字搜索)
-                    if(true == cookie.domain.contains(domain)) {
-                        // properties: 回傳一個 cookie 屬性 DictionaryArray，是唯讀屬性
-                        // 將 cookies.name 放入 cookieDictionaryArray
-                        self.cookieDictionaryArray[cookie.name] = cookie.properties as AnyObject?
-                        // 成功取得 cookie
-                        self.success = true
-                        
-                    }
-                    
-                }else {
-//                    // 當前網域的 cookie 為 nil，失敗回傳 false
-//                    self.cookieDictionaryArray[cookie.name] = cookie.properties as AnyObject?
-//                    // 無法取得 cookie
-                    self.success = false
-                    
-                }
-                
-            }
-            // 為逃逸閉包，執行完後，可以再次執行閉包
-            getCompletion(self.cookieDictionaryArray, self.success)
-            
-        }
         
     }
     // 刪除 webView cookies
@@ -166,14 +116,6 @@ class CusWebViewManager: NSObject {
 extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
         
-        netWorkModel.webViewPostData(for: netWorkModel.netWorkURL) { (result, sysss) in
-            switch result {
-            case .failure(let error):
-                print(error)
-                
-            }
-            
-        }
 
     }
     // webView 收到伺服器響應頭呼叫，包含 response 的相關資訊，回撥決定是否跳轉
@@ -186,17 +128,15 @@ extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
         if(nil != webView.title) {
             // 取得 webView cookies
             // url.host: 針對基本的 url 解析，如果 webView.url 不為 nil，回傳主機端 url
-            self.getWebViewCookies(for: netWorkModel.netWorkURL.host) { (cookieData, success) in
+            netWorkModel.getWebViewCookies { (cookieData, success) in
                 if(false != success) {
-                    print("\(self.netWorkModel.netWorkURL.absoluteString)")
-
                     print(cookieData!)
-
+                    
                 }else {
                     print("取得失敗")
                     
                 }
-
+                
             }
             // 刪除 webView cookies
             self.deleteWebViewCookies(for: netWorkModel.netWorkURL.host) { (recordData) in
