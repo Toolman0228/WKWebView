@@ -48,7 +48,7 @@ extension UIColor {
     // 次要的初始化，主要是增加 init() 初始化
     convenience init(R: Int, G: Int, B: Int, A: CGFloat) {
         // 自定義顏色，需要使用 UIColor init() 初始化
-        // 使用 onvenience init()，一定要呼叫父類別的 init()
+        // 使用 convenience init()，一定要呼叫父類別的 init()
         self.init(red: R._Red, green: G._Green, blue: B._Blue, alpha: A)
         
     }

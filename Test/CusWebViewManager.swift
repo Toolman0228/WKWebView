@@ -49,6 +49,7 @@ class CusWebViewManager: NSObject {
     }
     // 刪除 webView cookies
     func deleteWebViewCookies(for domain: String?, deleteCompletion: @escaping deleteCookiesHandler) -> Void {
+        URLCache.shared.removeAllCachedResponses()
         // fetchDataRecords(): 取得包含提供 webView data 類型的紀錄
         // ofTypes: 取得紀錄 webView data 的類型
         // WKWebsiteDataStore.allWebsiteDataTypes(): 回傳所有可使用 webView data 的類型
@@ -70,6 +71,19 @@ class CusWebViewManager: NSObject {
         }
 
     }
+    
+//    func aaa() {
+//        var libraryPath : String = FileManager().urls(for: .libraryDirectory, in: .userDomainMask).first!.path
+//        libraryPath += "/Cookies"
+//        
+//        do {
+//            try FileManager.default.removeItem(atPath: libraryPath)
+//        } catch {
+//            print("error")
+//        }
+//        URLCache.shared.removeAllCachedResponses()
+//    }
+    
     // 儲存 cookie 於本地端
     func saveCookiesUserDefaults(_ saveData: [HTTPCookie]) -> Void {
         // 序列化資料，通過 archivedData 方法，轉為可以儲存資料的型別
@@ -128,7 +142,7 @@ extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
         if(nil != webView.title) {
             // 取得 webView cookies
             // url.host: 針對基本的 url 解析，如果 webView.url 不為 nil，回傳主機端 url
-            netWorkModel.getWebViewCookies { (cookieData, success) in
+            netWorkModel.takeWebViewCookies { (cookieData, success) in
                 if(false != success) {
                     print(cookieData!)
                     
@@ -138,18 +152,18 @@ extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
                 }
                 
             }
-            // 刪除 webView cookies
-            self.deleteWebViewCookies(for: netWorkModel.netWorkURL.host) { (recordData) in
-                // removeData(): 刪除提供 webView 紀錄的類型及 data
-                // ofTypes: 刪除 webView data 的類型
-                // for: 刪除 webView data 的紀錄
-                // completionHandler: 刪除 webView data 的紀錄時，需要做什麼事情，為逃逸閉包
-                self.webViewDataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), for: [recordData], completionHandler: {
-                    print("Delete: \(recordData.displayName)")
-
-                })
-
-            }
+//            // 刪除 webView cookies
+//            self.deleteWebViewCookies(for: netWorkModel.netWorkURL.host) { (recordData) in
+//                // removeData(): 刪除提供 webView 紀錄的類型及 data
+//                // ofTypes: 刪除 webView data 的類型
+//                // for: 刪除 webView data 的紀錄
+//                // completionHandler: 刪除 webView data 的紀錄時，需要做什麼事情，為逃逸閉包
+//                self.webViewDataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), for: [recordData], completionHandler: {
+//                    print("Delete: \(recordData)")
+//
+//                })
+//
+//            }
 
         }else {
             // 頁面重新刷新
