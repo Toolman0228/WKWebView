@@ -112,4 +112,3 @@ class ViewController: UIViewController {
 //        userContentController.add(scriptMessageHandler, name: script.name)
 //    }
 //}
-

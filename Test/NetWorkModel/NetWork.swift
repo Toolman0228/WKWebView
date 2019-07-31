@@ -36,7 +36,7 @@ class NetWork<T: Codable>: NSObject {
     }
     // Read Only
     // WKHTTPCookieStore: 可以新增、刪除、查詢、監聽變化，管理 cookie
-    // WKWebsiteDataStore: 為當前網站所使用各種資料，資料包含 cookie、磁碟、內存、暫存，以及儲存資料
+    // WKWebsiteDataStore: 為當前網站所使用各種資料，資料包含 cookie、磁碟、內存、暫存，以及儲存資料、快取等等資料，具體新增、刪除、查詢的方法，WKWebsiteDataStore 都有提供方法
     // default(): 回傳預設儲存的資料
     // httpCookieStore: 回傳當前網頁的儲存資料中，包含帶有 httpCookie 的 cookie
     var webViewHttpCookieStore: WKHTTPCookieStore {
@@ -54,8 +54,6 @@ class NetWork<T: Codable>: NSObject {
     var netWorkDataTaskResponse: String
     // 存放 webView cookie 資料，是一個 Dictionary
     var cookieDictionaryArray: Dictionary<String, AnyObject>
-    // 判斷是否成功取得 cookie 資料
-    var success: Bool
     
     init(netWorkURL: URL,
          netWorkDataTaskData: Data? = nil,
@@ -80,8 +78,6 @@ class NetWork<T: Codable>: NSObject {
         }
         
         cookieDictionaryArray = [:]
-      
-        success = false
         
         super.init()
         
@@ -91,6 +87,8 @@ class NetWork<T: Codable>: NSObject {
     // 回傳 webView 資料
     func webViewRequestData(for url: URL, ResultCompletion: @escaping RequestResultHandler) -> Void {
         // URL 加載請求
+        // timeIntervalSince1970: 格林威治時間 1970 年 01 月 01 日 00 時 00 分 00 秒至當下的時間秒差
+        //格林威治時間1970年01月01日 00時00分00秒 」至當下的時間的秒差
         let postURLRequest = URLRequest(url: netWorkURL, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 60)
         // 設置 URLRequest 請求方法為 Post
         //        postURLRequest.httpMethod = "POST"
@@ -159,7 +157,6 @@ class NetWork<T: Codable>: NSObject {
     }
     // 處理 cookies 資料，回傳完整 cookie 資料陣列
     private func webViewCookie(_ cookies: [HTTPCookie]) -> [String: Any]? {
-        print(cookies.count)
         for cookie in cookies {
             // properties: 回傳一個 cookie 屬性 DictionaryArray，是唯讀屬性
             // 將 cookies.name 放入 cookieDictionaryArray
@@ -183,25 +180,70 @@ class NetWork<T: Codable>: NSObject {
     // 自定義 closure，主要為取得 cookies 是否成功，設置為逃逸閉包，方便多次呼叫
     typealias GetCookiesHandler = (_ cookieData: [String: Any]?, _ success: Bool) -> Void
     // 取得 webView cookies
-    func takeWebViewCookies(_ getCompletion:  @escaping GetCookiesHandler) -> Void {
+    func takeWebViewCookies(_ getCompletion: @escaping GetCookiesHandler) -> Void {
         // 取得主執行緒使用，異步執行
         DispatchQueue.main.async {
             // 獲取所有儲存的 cookies
             self.webViewHttpCookieStore.getAllCookies { [weak self] takeCookies in
-                // 儲存 cookies 於本地端
-                // self.saveCookiesUserDefaults(cookies)
-                // 處理 cookies 資料，回傳完整 cookie 資料陣列
-                if let takeCookieDictionaryArray = self!.webViewCookie(takeCookies) {
-                    // 取得 cookie 資料判斷成功
-                    self!.success = true
-                    // 主要為取得 cookies 是否成功，設置為逃逸閉包，方便多次呼叫
-                    getCompletion(takeCookieDictionaryArray, self!.success)
+                // 判斷 cookies 總共有幾筆
+                if(0 != takeCookies.count) {
+                    // 儲存 cookies 於本地端
+                    // self.saveCookiesUserDefaults(cookies)
+                    // 處理 cookies 資料，回傳完整 cookie 資料陣列
+                    if let takeCookieDictionaryArray = self!.webViewCookie(takeCookies) {
+                        // 主要為取得 cookies 是否成功，設置為逃逸閉包，方便多次呼叫
+                        getCompletion(takeCookieDictionaryArray, true)
+                        
+                    }else {
+                        // 當前網域的 cookie 為 nil，失敗回傳 false
+                        // 主要為取得 cookies 是否成功，設置為逃逸閉包，方便多次呼叫
+                        getCompletion(nil, false)
+                        
+                    }
                     
                 }else {
-                    // 取得 cookie 資料判斷失敗
-                    self!.success = false
+                    // 當前網域的 cookie 為 nil，失敗回傳 false
                     // 主要為取得 cookies 是否成功，設置為逃逸閉包，方便多次呼叫
-                    getCompletion(nil, self!.success)
+                    getCompletion(nil, false)
+                    
+                }
+                
+            }
+        }
+        
+    }
+    // 自定義 closure，主要為將刪除 cookies 帶出，設置為逃逸閉包，方便多次呼叫
+    typealias DeleteCookiesHandler = (_ recordData: WKWebsiteDataRecord?, _ success: Bool) -> Void
+    // 刪除 webView cookies
+    func removeWebViewCookies(deleteCompletion: @escaping DeleteCookiesHandler) -> Void {
+        DispatchQueue.main.async {
+            // 刪除被指定時間後所有的 cookies
+            HTTPCookieStorage.shared.removeCookies(since: Date.distantPast)
+            // 刪除全部緩存
+            URLCache.shared.removeAllCachedResponses()
+            // 取得包含提供 webView data 類型的紀錄
+            // ofTypes: 取得紀錄 webView data 的類型
+            // WKWebsiteDataStore.allWebsiteDataTypes(): 回傳所有可使用 webView data 的類型
+            WKWebsiteDataStore.default().fetchDataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes()) { (records) in
+                // 判斷 cookies 是否有緩存資料
+                if(0 != self.cookieDictionaryArray.count) {
+                    records.forEach({ (record) in
+//                        // 安全型別判斷
+//                        if let domain = domain {
+//                            // displayName: webView data 紀錄名稱，通常是網域名稱
+//                            if(true == record.displayName.contains(domain)) {
+//
+//                            }
+//
+//                        }
+                        // 主要為將刪除 cookies 帶出，是否刪除成功，設置為逃逸閉包，方便多次呼叫
+                        deleteCompletion(record, true)
+                        
+                    })
+                    
+                }else {
+                    // 主要為將刪除 cookies 帶出，是否刪除成功，設置為逃逸閉包，方便多次呼叫
+                    deleteCompletion(nil, false)
                     
                 }
                 
@@ -210,46 +252,20 @@ class NetWork<T: Codable>: NSObject {
         
     }
     
-    func deleteWebViewCookies() -> Void {
+    func aaa() {
+        var libraryPath : String = FileManager().urls(for: .libraryDirectory, in: .userDomainMask).first!.path
+        libraryPath += "/Cookies"
         
-        if let exsitCookies = HTTPCookieStorage.shared.cookies(for: netWorkURL) {
-    
-            for exsitCookie in exsitCookies {
-                webViewHttpCookieStore.delete(exsitCookie)
-
-            }
-            
+        do {
+            try FileManager.default.removeItem(atPath: libraryPath)
+        } catch {
+            print("error")
         }
-        
-//        var DictionaryArray: Dictionary<String, AnyObject> = [:]
-//
-//        let takeCookies = HTTPCookieStorage.shared.cookies(for: netWorkURL)
-//
-//        if let takeCookie = takeCookies {
-//
-//            for Cookie in takeCookie {
-//
-//                if(true == Cookie.domain.contains(netWorkURL.host!)) {
-//                    DictionaryArray[Cookie.name] = Cookie.properties as AnyObject?
-//
-//                    print("===============")
-//
-//                    print(DictionaryArray)
-//
-//                }
-//
-//            }
-//
-//        }else {
-//            print("我在這")
-//
-//
-//        }
+        URLCache.shared.removeAllCachedResponses()
         
     }
     // json 格式解碼
     func webViewJsonDecoder(_ object: T.Type) -> T? {
-        
         do {
             // 類別初始化程序宣告為 decoder 物件
             let jsonDecoder = JSONDecoder()
@@ -269,48 +285,8 @@ class NetWork<T: Codable>: NSObject {
         
     }
     // json 格式編碼
-    func webViewJsonEncoder() {
+    func webViewJsonEncoder() -> Void {
         
     }
-//    // 自定義 closure，主要為取得 cookies 是否成功，設置為逃逸閉包，方便多次呼叫
-//    typealias GetCookiesHandler = (_ cookieData: [String: Any]?, _ success: Bool) -> Void
-//    // 取得 webView cookies
-//    func takeWebViewCookies(_ getCompletion:  @escaping GetCookiesHandler) -> Void {
-//        // 獲取所有儲存的 cookies
-//        webViewHttpCookieStore.getAllCookies { cookies in
-//            // 儲存 cookie 於本地端
-//            // self.saveCookiesUserDefaults(cookies)
-//
-//            for cookie in cookies {
-//                // 安全型別判斷
-//                if let domain = self.netWorkURL.host {
-//                    // 取得當前網域的 cookie，不為 nil 時，會透過搜尋區分大小寫包含 self 在內，成功會回傳 true (非文字搜索)
-//                    if(true == cookie.domain.contains(domain)) {
-//                        // properties: 回傳一個 cookie 屬性 DictionaryArray，是唯讀屬性
-//                        // 將 cookies.name 放入 cookieDictionaryArray
-//                        self.cookieDictionaryArray[cookie.name] = cookie.properties as AnyObject?
-//                        // 成功取得 cookie
-//                        self.success = true
-//
-//                    }
-//
-//                }else {
-//                    // 當前網域的 cookie 為 nil，失敗回傳 false
-//                    self.cookieDictionaryArray[cookie.name] = cookie.properties as AnyObject?
-//                    // 無法取得 cookie
-//                    self.success = false
-//
-//                }
-//
-//
-////                HTTPCookieStorage.shared.setCookie(cookie)
-//
-//            }
-//            // 為逃逸閉包，執行完後，可以再次執行閉包
-//            getCompletion(self.cookieDictionaryArray, self.success)
-//
-//        }
-//
-//    }
-    
+
 }

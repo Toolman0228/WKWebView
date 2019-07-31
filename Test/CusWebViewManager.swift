@@ -10,20 +10,8 @@ import UIKit
 import WebKit
 import SystemConfiguration
 
-// 自定義 closure，方便多次呼叫
-typealias deleteCookiesHandler = (WKWebsiteDataRecord) -> Void
-
 class CusWebViewManager: NSObject {
     weak var webView: WKWebView!
-    // Read Only
-    // websiteDataStore: 快取等等資料，具體新增、刪除、查詢的方法，websiteDataStore 都有提供方法
-    var webViewDataStore: WKWebsiteDataStore {
-        get {
-            return WKWebsiteDataStore.default()
-            
-        }
-        
-    }
     // Read Only
     // webView cookie 儲存本地端
     var webViewCookieUserDefaults: UserDefaults {
@@ -33,8 +21,6 @@ class CusWebViewManager: NSObject {
         }
         
     }
-    // 存放 webView cookie 資料，是一個 DictionaryArray
-    var cookieDictionaryArray: [String: AnyObject]  = [:]
     
     var netWorkModel: NetWorkManager!
 
@@ -47,43 +33,6 @@ class CusWebViewManager: NSObject {
         netWorkModel =  NetWorkManager.shared
         
     }
-    // 刪除 webView cookies
-    func deleteWebViewCookies(for domain: String?, deleteCompletion: @escaping deleteCookiesHandler) -> Void {
-        URLCache.shared.removeAllCachedResponses()
-        // fetchDataRecords(): 取得包含提供 webView data 類型的紀錄
-        // ofTypes: 取得紀錄 webView data 的類型
-        // WKWebsiteDataStore.allWebsiteDataTypes(): 回傳所有可使用 webView data 的類型
-        webViewDataStore.fetchDataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes()) { (records) in
-            
-            for record in records {
-                // 安全型別判斷
-                if let domain = domain {
-                    // displayName: webView data 紀錄名稱，通常是網域名稱
-                    if(true == record.displayName.contains(domain)) {
-                        // 為逃逸閉包，執行完後，可以再次執行閉包
-                        deleteCompletion(record)
-            
-                    }
-
-                }
-            }
-
-        }
-
-    }
-    
-//    func aaa() {
-//        var libraryPath : String = FileManager().urls(for: .libraryDirectory, in: .userDomainMask).first!.path
-//        libraryPath += "/Cookies"
-//        
-//        do {
-//            try FileManager.default.removeItem(atPath: libraryPath)
-//        } catch {
-//            print("error")
-//        }
-//        URLCache.shared.removeAllCachedResponses()
-//    }
-    
     // 儲存 cookie 於本地端
     func saveCookiesUserDefaults(_ saveData: [HTTPCookie]) -> Void {
         // 序列化資料，通過 archivedData 方法，轉為可以儲存資料的型別
@@ -129,7 +78,6 @@ class CusWebViewManager: NSObject {
 // MARK: WKNavigationDelegate、WKUIDelegate 實作
 extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-        
 
     }
     // webView 收到伺服器響應頭呼叫，包含 response 的相關資訊，回撥決定是否跳轉
@@ -147,23 +95,28 @@ extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
                     print(cookieData!)
                     
                 }else {
-                    print("取得失敗")
+                    print("cookieData 無資料或已被刪除")
                     
                 }
                 
             }
-//            // 刪除 webView cookies
-//            self.deleteWebViewCookies(for: netWorkModel.netWorkURL.host) { (recordData) in
-//                // removeData(): 刪除提供 webView 紀錄的類型及 data
-//                // ofTypes: 刪除 webView data 的類型
-//                // for: 刪除 webView data 的紀錄
-//                // completionHandler: 刪除 webView data 的紀錄時，需要做什麼事情，為逃逸閉包
-//                self.webViewDataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), for: [recordData], completionHandler: {
-//                    print("Delete: \(recordData)")
-//
-//                })
-//
-//            }
+            // 刪除 webView cookies
+            netWorkModel.removeWebViewCookies { (dataRecord, success) in
+                if(false != success) {
+                    // 刪除提供 webView 紀錄的類型及 data
+                    // ofTypes: 刪除 webView data 的類型
+                    // for: 刪除 webView data 的紀錄
+                    // completionHandler: 刪除 webView data 的紀錄時，需要做什麼事情，為逃逸閉包
+                    WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), for: [dataRecord!], completionHandler: {
+                        print("[WebCacheCleaner] Record \(dataRecord!) deleted")
+                    })
+
+                }else {
+                    print("刪除成功")
+
+                }
+
+            }
 
         }else {
             // 頁面重新刷新
@@ -190,9 +143,9 @@ extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
         // 出現錯誤，停止加載網頁所有資源
         webView.stopLoading()
         
-        print("停止")
-        
-        NSLog("WebView Loading Error: \(error.localizedDescription)")
+//        print("停止")
+//        
+//        NSLog("WebView Loading Error: \(error.localizedDescription)")
         
     }
    
