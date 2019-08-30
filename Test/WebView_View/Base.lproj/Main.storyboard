@@ -32,15 +32,38 @@
                                     <wkPreferences key="preferences"/>
                                 </wkWebViewConfiguration>
                             </wkWebView>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ons-nI-cG8">
+                                <rect key="frame" x="324" y="792" width="70" height="70"/>
+                                <subviews>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="bAg-Sb-Ul4">
+                                        <rect key="frame" x="0.0" y="0.0" width="70" height="70"/>
+                                        <state key="normal" title="Button"/>
+                                        <connections>
+                                            <action selector="ReloadWebViewBtn:" destination="BYZ-38-t0r" eventType="touchUpInside" id="GLy-Zt-171"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstItem="bAg-Sb-Ul4" firstAttribute="top" secondItem="ons-nI-cG8" secondAttribute="top" id="DRF-bm-N0b"/>
+                                    <constraint firstAttribute="bottom" secondItem="bAg-Sb-Ul4" secondAttribute="bottom" id="cgF-xE-PK6"/>
+                                    <constraint firstAttribute="trailing" secondItem="bAg-Sb-Ul4" secondAttribute="trailing" id="hfS-9h-glR"/>
+                                    <constraint firstItem="bAg-Sb-Ul4" firstAttribute="leading" secondItem="ons-nI-cG8" secondAttribute="leading" id="nDP-nJ-qpM"/>
+                                </constraints>
+                            </view>
                         </subviews>
                         <color key="backgroundColor" red="0.16860446333885193" green="0.16864064335823059" blue="0.16860216856002808" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="ons-nI-cG8" secondAttribute="trailing" constant="20" id="59g-bO-gcM"/>
                             <constraint firstItem="Ngk-su-NdC" firstAttribute="trailing" secondItem="6Tk-OE-BBY" secondAttribute="trailing" id="8w7-8h-0KX"/>
+                            <constraint firstItem="ons-nI-cG8" firstAttribute="top" secondItem="9Vv-Vl-X2V" secondAttribute="bottom" constant="-104" id="Dje-Za-28n"/>
                             <constraint firstItem="Ngk-su-NdC" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="LRl-IV-Qu2"/>
+                            <constraint firstItem="ons-nI-cG8" firstAttribute="leading" secondItem="9Vv-Vl-X2V" secondAttribute="trailing" constant="-90" id="OG5-MJ-LSO"/>
                             <constraint firstItem="Ngk-su-NdC" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" id="OXN-s5-4Eh"/>
                             <constraint firstItem="9Vv-Vl-X2V" firstAttribute="trailing" secondItem="6Tk-OE-BBY" secondAttribute="trailing" id="VTR-Wj-YGw"/>
                             <constraint firstAttribute="bottom" secondItem="9Vv-Vl-X2V" secondAttribute="bottom" id="hyq-5O-dSd"/>
                             <constraint firstItem="9Vv-Vl-X2V" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="i8Z-Ag-mKO"/>
+                            <constraint firstAttribute="bottom" secondItem="ons-nI-cG8" secondAttribute="bottom" constant="34" id="nqD-Ka-TD1"/>
                             <constraint firstItem="9Vv-Vl-X2V" firstAttribute="top" secondItem="Ngk-su-NdC" secondAttribute="bottom" id="oX1-jE-vgf"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>

@@ -39,7 +39,7 @@ class TestNaviationBar: UINavigationBar {
     
     func testNavBarFrame() -> Void {
         
-        let visualEffectView = UIVisualEffectView(frame: self.navBarImageView.frame)
+        let visualEffectView: UIVisualEffectView = UIVisualEffectView(frame: self.navBarImageView.frame)
         
         visualEffectView.contentView.backgroundColor = UIColor().cusDarkGreyColor()
         

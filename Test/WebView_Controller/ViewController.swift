@@ -9,6 +9,7 @@
 
 import UIKit
 import WebKit
+import SystemConfiguration
 
 class ViewController: UIViewController {
     
@@ -29,6 +30,11 @@ class ViewController: UIViewController {
         }
         
     }
+    // Read Only
+    // 設置 scrollView 起始座標位置與偏移座標位置的距離
+    private (set) var webScrollViewContentOffSet: CGPoint = CGPoint(x: 0.0, y: 0.0)
+    // Read Only
+    private (set) var reloadloadingViewAppDelegate: AppDelegate = UIApplication.shared.delegate as! AppDelegate
     
     //    let webHTML = try! String(contentsOfFile: Bundle.main.path(forResource: "testScript", ofType: "html")!, encoding: String.Encoding.utf8)
     // MARK: 不使用 storyBoard，透過 lazy 來創造 WKWebView
@@ -58,8 +64,9 @@ class ViewController: UIViewController {
     //
     //        return touchBarContantView
     //
-    //    }()
     
+    //    }()
+  
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
@@ -76,6 +83,29 @@ class ViewController: UIViewController {
         loadTestWebViewUrl()
         
     }
+    // 重新報價按鈕
+    @IBAction func ReloadWebViewBtn(_ sender: UIButton) {
+        // webView 裡的 scrollView 座標位置偏移至最上層原點
+        // contentOffset: scrollView 起始座標位置與當前頁面內容之間座標位置偏移距離
+        // setContentOffset: 改變當前頁面原點座標位置
+        testWebView.scrollView.setContentOffset(webScrollViewContentOffSet, animated: true)
+        // 取得主執行緒使用，異步執行，所有 UI 元件更新，需在主執行緒執行
+        DispatchQueue.main.async { [weak self] in
+            // 安全型別判斷
+            if let vcSelf = self {
+                let aa = vcSelf.reloadloadingViewAppDelegate.loadingView.setupLoadingView()
+                
+                vcSelf.view.addSubview(aa!)
+                // 重新加載 webView 頁面
+                vcSelf.testWebView.reload()
+                
+                print("重新報價")
+
+            }
+
+        }
+        
+    }
     // MARK: 設置 webView 屬性及方法
     // webView 屬性設置
     func testWebViewAttribute() -> Void {
@@ -85,7 +115,6 @@ class ViewController: UIViewController {
         testConfiguration.preferences = testPerfernces
        
         testConfiguration.userContentController = testUserController
-    
         // isOpaque: 表示 UIView 是否透明，但不表示當前 UIView 是不是不透明
         // 如為 true，UIView 照樣還是可以看見
         testWebView.isOpaque = false
@@ -106,9 +135,4 @@ class ViewController: UIViewController {
 
 }
 
-//extension WKWebViewConfiguration {
-//    func add(script: WKUserScript.Defined, scriptMessageHandler: WKScriptMessageHandler) {
-//        userContentController.addUserScript(script.create())
-//        userContentController.add(scriptMessageHandler, name: script.name)
-//    }
-//}
+
