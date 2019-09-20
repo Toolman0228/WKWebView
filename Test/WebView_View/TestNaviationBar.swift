@@ -9,7 +9,8 @@
 import UIKit
 
 class TestNaviationBar: UINavigationBar {
-    let navBarImageView: UIImageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 414, height: 44))
+    // Read Only
+    private (set) var navBarImageView: UIImageView = UIImageView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height))
 
     /*
     // Only override draw() if you perform custom drawing.
@@ -40,7 +41,7 @@ class TestNaviationBar: UINavigationBar {
     func testNavBarFrame() -> Void {
         
         let visualEffectView: UIVisualEffectView = UIVisualEffectView(frame: self.navBarImageView.frame)
-        
+        // visualEffectView.contentView 背景顏色為深丈青色
         visualEffectView.contentView.backgroundColor = UIColor().cusDarkGreyColor()
         
         self.addSubview(visualEffectView)

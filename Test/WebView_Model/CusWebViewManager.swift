@@ -13,24 +13,58 @@ class CusWebViewManager: NSObject {
     
     weak var webView: WKWebView!
     
+    weak var btnSuperView: UIView!
+
     var netWorkModel: NetWorkManager!
     // webView cookie 儲存本地端
     let webViewCookieUserDefaults: UserDefaults = UserDefaults.standard
     // Read Only
+    // 通過 UIApplication.shared 取得這個單例物件
+    // UIApplication: 為應用程式的象徵，每一個應用程式都有一個 UIApplication 物件，系統自動會建立，為一個單例物件，程式啟動後，建立的第一個物件就是 UIApplication，不能手動建立
+    // UIApplication.shared.delegate: 可以處理應用程式生命週期事件(程式啟動和關閉)、系統提示(來電)、記憶體警告
     private (set) var loadingViewAppDelegate: AppDelegate = UIApplication.shared.delegate as! AppDelegate
     // Read Only
     // DispatchWorkItem: 為一個代碼區塊，可以在任何佇列上被調用，裡面程式碼可以在子執行緒或在主執行緒執行，主要將工作概念封裝，幫助 DispatchQueue 來執行佇列上任務
-    private (set) var delayTimeWorkItem: DispatchWorkItem?
+    private (set) var delayLoadingTimeWorkItem: DispatchWorkItem? = {
+       return DispatchWorkItem.init(block: {})
+        
+    }()
     
-    init(webView: WKWebView){
+    init(btnSuperView: UIView,
+         webView: WKWebView){
+        
+        self.btnSuperView = btnSuperView
         
         self.webView = webView
-        
-        netWorkModel =  NetWorkManager.shared
-        
-        delayTimeWorkItem = DispatchWorkItem.init(block: {})
        
+        netWorkModel =  NetWorkManager.shared
+
         super.init()
+        
+    }
+    // 是否使用 scrollView 拖曳手勢
+    func webScrollViewGestureRecognizer(_ enable: Bool) {
+        // 取得主執行緒使用，異步執行，所有 UI 元件更新，需在主執行緒執行
+        DispatchQueue.main.async { [weak self] in
+            // 安全型別判斷
+            if let webScrollViewSelf = self {
+                // scrollView 拖曳手勢識別是否使用
+                webScrollViewSelf.webView.scrollView.panGestureRecognizer.isEnabled = enable
+                // 判斷是否拖曳手勢
+                if(true != enable) {
+                    
+                    // 隱藏 webView 上按鈕父視圖
+                    webScrollViewSelf.btnSuperView.isHidden = true
+        
+                }else {
+                    // 顯示 webView 上按鈕父視圖
+                    webScrollViewSelf.btnSuperView.isHidden = false
+                    
+                }
+                
+            }
+            
+        }
         
     }
     // 儲存 cookie 於本地端
@@ -55,36 +89,40 @@ class CusWebViewManager: NSObject {
 }
 // MARK: WKNavigationDelegate、WKUIDelegate 實作
 extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
+    // webView 開始加載
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        // 是否使用 scrollView 拖曳手勢
+        webScrollViewGestureRecognizer(false)
         // 檢查是否開啟行動數據
         let connect: [String] = netWorkModel.connectToIfaddrs()
         // 判斷 connect 陣列是否為空
         if(false != connect.isEmpty) {
-            // 判斷 delayTimeWorkItem 是否為空
-            if(nil != delayTimeWorkItem) {
-                // 將需要執行工作封裝，方便在任何佇列上被調用
-                delayTimeWorkItem = DispatchWorkItem { [weak self] in
-                    if let cusWebViewManagerSelf = self {
-                        // 設置 loadingView 延遲讀取時間畫面
-                        cusWebViewManagerSelf.loadingViewAppDelegate.loadingView.loadingViewDelayTime(2.0, .background) {
-                            print("loadingView 延遲消失")
-                            // webView 無法收到加載內容開始，移除當前視圖上的 loadingView
-                            cusWebViewManagerSelf.loadingViewAppDelegate.loadingView.removeLoadingView()
-
-                        }
-
-                    }
-
-                }
-                // 佇列上，提交需要執行工作，為子執行緒的異步執行，結束後，會立即返回，不會有執行緒卡住問題
-                // execute: 提交需要執行工作
-                DispatchQueue.global().async(execute: delayTimeWorkItem!)
-    
-            }
+//            // 判斷 delayTimeWorkItem 是否有任務
+//            if(nil != delayLoadingTimeWorkItem) {
+//                // 將需要執行工作封裝，方便在任何佇列上被調用
+//                delayLoadingTimeWorkItem = DispatchWorkItem { [weak self] in
+//                    // 安全型別判斷
+//                    if let cusWebViewManagerSelf = self {
+//                        // 出現錯誤，設置 loadingView 延遲讀取時間畫面
+//                        DispatchQueue.disPatchDelayTime(2.0, .main) {
+//                            print("loadingView 延遲消失")
+//                            // webView 無法收到加載內容開始，移除當前視圖上的 loadingView
+//                            cusWebViewManagerSelf.loadingViewAppDelegate.loadingView.removeLoadingView()
+//
+//                        }
+//
+//                    }
+//
+//                }
+//                // 佇列上，提交需要執行工作，為子執行緒的異步執行，結束後，會立即返回，不會有執行緒卡住問題
+//                // execute: 提交需要執行工作
+//                DispatchQueue.global().async(execute: delayLoadingTimeWorkItem!)
+//
+//            }
     
         }else {
             // 行動數據開啟，delayTimeWorkItem 為 nil
-            delayTimeWorkItem = nil
+            delayLoadingTimeWorkItem = nil
             
         }
         
@@ -94,10 +132,13 @@ extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
         decisionHandler(.allow)
         
     }
-    // webView 收到加載內容開始
+    // webView 收到加載內容開始返回
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
-        // 判斷 delayTimeWorkItem 是否為 nil
-        if(nil != delayTimeWorkItem) {
+        // 判斷 delayTimeWorkItem 是否有任務
+        if(nil != delayLoadingTimeWorkItem) {
+            // webView 正常載入，取消 delayTimeWorkItem 任務
+            delayLoadingTimeWorkItem?.cancel()
+            
             print("DispatchWorkItem 沒有取消")
             
         }else {
@@ -132,6 +173,7 @@ extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
                     // completionHandler: 刪除 webView data 的紀錄時，需要做什麼事情，為逃逸閉包
                     WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), for: [dataRecord!], completionHandler: {
                         print("[WebCacheCleaner] Record \(dataRecord!) deleted")
+                        
                     })
 
                 }else {
@@ -140,6 +182,8 @@ extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
                 }
 
             }
+            // 是否使用 scrollView 拖曳手勢
+            webScrollViewGestureRecognizer(true)
 
         }else {
             // 頁面重新刷新
@@ -165,10 +209,10 @@ extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         // 出現錯誤，停止加載網頁所有資源
         webView.stopLoading()
-        // 取消任務
-        delayTimeWorkItem?.cancel()
-        // 判斷任務是否取消
-        if(false != delayTimeWorkItem?.isCancelled) {
+        // 出現錯誤，取消 delayTimeWorkItem 任務
+        delayLoadingTimeWorkItem?.cancel()
+        // 出現錯誤，判斷 delayTimeWorkItem 任務是否取消
+        if(false != delayLoadingTimeWorkItem?.isCancelled) {
             NSLog("停止，WebView Loading Error: \(error.localizedDescription)")
             
             fatalError("WebView connect is error")

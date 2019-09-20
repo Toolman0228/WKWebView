@@ -8,35 +8,35 @@
 
 import UIKit
 
-
 protocol NSNumber {
-    // _Red Read Only
+    // Read Only
     var _Red: CGFloat { get }
-    // _Green Read Only
+    // Read Only
     var _Green: CGFloat { get }
-    // _Blue Read Only
+    // Read Only
     var _Blue: CGFloat { get }
-    // _Alpha Read Only
+    // Read Only
     var _Alpha: CGFloat { get }
     
 }
 
 extension Int: NSNumber {
+    // 計算屬性
     var _Red: CGFloat {
         return CGFloat(self) / 255
         
     }
-    
+    // 計算屬性
     var _Green: CGFloat {
         return  CGFloat(self) / 255
         
     }
-    
+    // 計算屬性
     var _Blue: CGFloat {
         return  CGFloat(self) / 255
         
     }
-    
+    // 計算屬性
     var _Alpha: CGFloat {
         return  CGFloat(self)
         
@@ -55,6 +55,11 @@ extension UIColor {
     // 深灰色
     func cusDarkGreyColor() -> UIColor {
         return UIColor(R: 43, G: 43, B: 43, A: 1)
+        
+    }
+    // 深丈青色
+    func cusDarkNavyColor() -> UIColor {
+        return UIColor(R: 4, G: 13, B: 41, A: 100)
         
     }
     

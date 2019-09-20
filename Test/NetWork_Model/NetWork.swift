@@ -318,29 +318,34 @@ class NetWork<T: Codable>: NSObject {
                 
             }
             // 取得主執行緒使用，異步執行
-            DispatchQueue.main.async {
+            DispatchQueue.main.async { [weak self] in
                 // task 回傳 HTTP 狀態碼，取得伺服器端 HTTPRespones 狀態
                 // task 回傳請求信息，發送網路請求時，如果請求成功，會接收到客戶端的回傳訊息，直接開始接收回傳的資料
                 // HTTPURLResponse: 對 HTTP 請求，回傳被封裝為 HTTPURLResponse 的型別
                 if let webViewHTTPStatus = response as? HTTPURLResponse  {
-                    // 判斷伺服器端 HTTPRespones 狀態是否連線正常
-                    if(false != self?.statusCodeRange.contains(webViewHTTPStatus.statusCode)) {
-                        // 自定義 closure { }，主要為檢查伺服器狀態是否成功接收要求，設置為逃逸閉包，方便多次呼叫
-                        ResultCompletion(RequestResult.failure(NetWorkError.httpStatusCode(webViewHTTPStatus.statusCode)), self!.statusCodeRange.contains(webViewHTTPStatus.statusCode))
-                        // 接收回傳請求訊息參數
-                        // description: 程序中打印出 Log 調用的方法
-                        // debugDescription: 進行斷點測試時，可以在除錯視窗輸入 po 的語法，來打印出調用的方法
-                        self?.netWorkDataTaskResponse = response!.description
-                        
-                    }else {
-                        // 自定義 closure { }，主要為檢查伺服器狀態是否成功接收要求，設置為逃逸閉包，方便多次呼叫
-                        ResultCompletion(RequestResult.failure(NetWorkError.httpStatusCode(webViewHTTPStatus.statusCode)), self!.statusCodeRange.contains(webViewHTTPStatus.statusCode))
-                        
-                        print("responseString = \(responseString)")
-                        
-                        print("response = \(response!)")
+                    // 安全型別判斷
+                    if let netWorkSelf = self {
+                        // 判斷伺服器端 HTTPRespones 狀態是否連線正常
+                        if(false != netWorkSelf.statusCodeRange.contains(webViewHTTPStatus.statusCode)) {
+                            // 自定義 closure { }，主要為檢查伺服器狀態是否成功接收要求，設置為逃逸閉包，方便多次呼叫
+                            ResultCompletion(RequestResult.failure(NetWorkError.httpStatusCode(webViewHTTPStatus.statusCode)), netWorkSelf.statusCodeRange.contains(webViewHTTPStatus.statusCode))
+                            // 接收回傳請求訊息參數
+                            // description: 程序中打印出 Log 調用的方法
+                            // debugDescription: 進行斷點測試時，可以在除錯視窗輸入 po 的語法，來打印出調用的方法
+                            netWorkSelf.netWorkDataTaskResponse = response!.description
+                            
+                        }else {
+                            // 自定義 closure { }，主要為檢查伺服器狀態是否成功接收要求，設置為逃逸閉包，方便多次呼叫
+                            ResultCompletion(RequestResult.failure(NetWorkError.httpStatusCode(webViewHTTPStatus.statusCode)), netWorkSelf.statusCodeRange.contains(webViewHTTPStatus.statusCode))
+                            
+                            print("responseString = \(responseString)")
+                            
+                            print("response = \(response!)")
+                            
+                        }
                         
                     }
+                    
                     
                 }
                 
@@ -488,8 +493,6 @@ class NetWork<T: Codable>: NSObject {
         
     }
     
-    
-
 }
 
 //extension WKWebViewConfiguration {

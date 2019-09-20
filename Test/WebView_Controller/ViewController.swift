@@ -15,7 +15,9 @@ class ViewController: UIViewController {
     
     @IBOutlet weak var testWebView: WKWebView!
     
-    var webViewModel: CusWebViewManager!
+    @IBOutlet weak var reloadWebViewBtnSuperView: UIView!
+    
+    var webViewModel: CusWebViewManager?
     
     var webviewNetWorkModel: NetWorkManager!
     // WKPreferences(): 封裝 webView 偏好設置，對象由 webView 配置指定
@@ -34,6 +36,7 @@ class ViewController: UIViewController {
     // 設置 scrollView 起始座標位置與偏移座標位置的距離
     private (set) var webScrollViewContentOffSet: CGPoint = CGPoint(x: 0.0, y: 0.0)
     // Read Only
+    // 通過 UIApplication.shared 取得這個單例物件
     private (set) var reloadloadingViewAppDelegate: AppDelegate = UIApplication.shared.delegate as! AppDelegate
     
     //    let webHTML = try! String(contentsOfFile: Bundle.main.path(forResource: "testScript", ofType: "html")!, encoding: String.Encoding.utf8)
@@ -69,14 +72,15 @@ class ViewController: UIViewController {
   
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
-        webViewModel = CusWebViewManager(webView: testWebView)
-        
         webviewNetWorkModel = NetWorkManager.shared!
+        // Do any additional setup after loading the view.
+        webViewModel = CusWebViewManager(btnSuperView: reloadWebViewBtnSuperView, webView: testWebView)
         
         self.testWebView.navigationDelegate = webViewModel
         
         self.testWebView.uiDelegate = webViewModel
+        // 隱藏 webView 上按鈕父視圖
+        reloadWebViewBtnSuperView.isHidden = true
         // webView 屬性設置
         testWebViewAttribute()
         // 讀取 webView 內容
@@ -84,31 +88,38 @@ class ViewController: UIViewController {
         
     }
     // 重新報價按鈕
-    @IBAction func ReloadWebViewBtn(_ sender: UIButton) {
-        // webView 裡的 scrollView 座標位置偏移至最上層原點
-        // contentOffset: scrollView 起始座標位置與當前頁面內容之間座標位置偏移距離
-        // setContentOffset: 改變當前頁面原點座標位置
-        testWebView.scrollView.setContentOffset(webScrollViewContentOffSet, animated: true)
-        // 取得主執行緒使用，異步執行，所有 UI 元件更新，需在主執行緒執行
-        DispatchQueue.main.async { [weak self] in
+    @IBAction func ReloadWebViewBtnOnclick(_ sender: UIButton) {
+        // UIView 動畫效果
+        UIView.animate(withDuration: 1.0) { [weak self] in
             // 安全型別判斷
             if let vcSelf = self {
-                let aa = vcSelf.reloadloadingViewAppDelegate.loadingView.setupLoadingView()
+                // 取得主執行緒使用，異步執行，所有 UI 元件更新，需在主執行緒執行
+                // webView 裡的 scrollView 座標位置偏移至最上層原點
+                // contentOffset: scrollView 起始座標位置與當前頁面內容之間座標位置偏移距離
+                // setContentOffset: 改變當前頁面原點座標位置
+                // 放在主執行緒使用時，可能會造成 UIView 動畫效果消失
+                vcSelf.testWebView.scrollView.setContentOffset(vcSelf.webScrollViewContentOffSet, animated: false)
+                // 取得主執行緒使用，異步執行，所有 UI 元件更新，需在主執行緒執行
+                DispatchQueue.main.async {
+                    // 按下重新報價按鈕時，創造 loadingView
+                    if let reloadLoadingView = vcSelf.reloadloadingViewAppDelegate.loadingView.setupLoadingView() {
+                        // reloadLoadingView 添加到 ViewController 上
+                        vcSelf.view.addSubview(reloadLoadingView)
+                        // 重新加載 webView 頁面
+                        self!.testWebView.reload()
+                        
+                    }
+                    
+                }
                 
-                vcSelf.view.addSubview(aa!)
-                // 重新加載 webView 頁面
-                vcSelf.testWebView.reload()
-                
-                print("重新報價")
-
             }
-
+            
         }
         
     }
     // MARK: 設置 webView 屬性及方法
     // webView 屬性設置
-    func testWebViewAttribute() -> Void {
+    private func testWebViewAttribute() -> Void {
         // javaScriptEnabled: 是否禁用由網頁加載或執行的 javaScript，默認值為 true
         testPerfernces.javaScriptEnabled = true
         
@@ -118,12 +129,12 @@ class ViewController: UIViewController {
         // isOpaque: 表示 UIView 是否透明，但不表示當前 UIView 是不是不透明
         // 如為 true，UIView 照樣還是可以看見
         testWebView.isOpaque = false
-        // webView 背景顏色為深灰色
-        testWebView.backgroundColor = UIColor().cusDarkGreyColor()
+        // webView 背景顏色為深丈青色
+        testWebView.backgroundColor = UIColor().cusDarkNavyColor()
         
     }
     // 讀取 webView 內容
-    func loadTestWebViewUrl() -> Void {
+    private func loadTestWebViewUrl() -> Void {
         // URL 加載請求
         let request = URLRequest(url: webviewNetWorkModel.netWorkURL)
         // 讀取 URL 加載請求

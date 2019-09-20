@@ -21,6 +21,7 @@
 		18FB778D228BC4DE00AC7D83 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 18FB778B228BC4DE00AC7D83 /* Main.storyboard */; };
 		18FB778F228BC4DF00AC7D83 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 18FB778E228BC4DF00AC7D83 /* Assets.xcassets */; };
 		18FB7792228BC4DF00AC7D83 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 18FB7790228BC4DF00AC7D83 /* LaunchScreen.storyboard */; };
+		B7E4C8E8232F464300758F03 /* DispatchQueueManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7E4C8E7232F464300758F03 /* DispatchQueueManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,6 +41,7 @@
 		18FB778E228BC4DF00AC7D83 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		18FB7791228BC4DF00AC7D83 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		18FB7793228BC4DF00AC7D83 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B7E4C8E7232F464300758F03 /* DispatchQueueManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DispatchQueueManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,6 +79,7 @@
 			isa = PBXGroup;
 			children = (
 				18F8725F229FAC94008C873A /* CusWebViewManager.swift */,
+				B7E4C8E7232F464300758F03 /* DispatchQueueManager.swift */,
 			);
 			path = WebView_Model;
 			sourceTree = "<group>";
@@ -205,6 +208,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				18D0C9B722B24BAA0007866A /* NetWorkData.swift in Sources */,
+				B7E4C8E8232F464300758F03 /* DispatchQueueManager.swift in Sources */,
 				18C6B6D3229E916900BEDACF /* TestColorModel.swift in Sources */,
 				18D0C9B922B24BE30007866A /* NetWork.swift in Sources */,
 				18F87260229FAC94008C873A /* CusWebViewManager.swift in Sources */,
@@ -358,6 +362,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchScreenImage;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 998JBL655H;
@@ -379,6 +384,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchScreenImage;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 998JBL655H;

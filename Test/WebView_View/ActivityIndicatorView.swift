@@ -8,54 +8,39 @@
 
 import UIKit
 
-// GCD 佇列優先權順序
-enum DisPatchLevel {
-    case main
-    
-    case userInteractive
-    
-    case userInitiated
-    
-    case utility
-    
-    case background
-    // 選擇佇列優先權順序，提供一個適合的 qos 值在佇列初始化，預設為 .default
-    // .main: 使用主執行緒進行操作
-    // .global(): 使用全局隊列進行操作，為子執行緒
-    // DispatchQoS.QoSClass: 任務的重要性及優先順序的資訊，為一個包含特定情境 enum
-    var dispatchQueue: DispatchQueue {
-        // 任何情況下，都必須根據本身需求提供佇列執行的優先權順序及其他需要的資訊(例如在 CPU 上的執行時間)給系統，任務最終都會執行完成，差別在任務完成的優先時間
-        switch self {
-        case .main:
-            return DispatchQueue.main
-        // 隊列優先權順序最高
-        case .userInteractive:
-            return DispatchQueue.global(qos: .userInteractive)
-            
-        case .userInitiated:
-            return DispatchQueue.global(qos: .userInitiated)
-            
-        case .utility:
-            return DispatchQueue.global(qos: .utility)
-        // 隊列優先權順序最低
-        case .background:
-            return DispatchQueue.global(qos: .background)
+class ActivityIndicatorView: UIView {
+    // 計算屬性
+    // 計算 loaidngView 寬度
+    // floor: 返回不大於參數的最大整數，帶入參數型別為 Double
+    var calLoadingViewWidth: CGFloat {
+        get {
+            if(414 >= UIScreen.main.bounds.width) {
+                return CGFloat(floor(Double(UIScreen.main.bounds.width / 4)))
+                
+            }else {
+                return CGFloat(floor(Double(414 / 4)))
+                
+            }
             
         }
         
     }
-    
-}
-
-class ActivityIndicatorView: UIView {
-    // Read Only
-    // 計算 loaidngView 寬度
-    // floor: 返回不大於參數的最大整數，帶入參數型別為 Double
-    private (set) var calLoadingViewWidth: CGFloat = CGFloat(floor(Double(UIScreen.main.bounds.width / 4)))
-    // Read Only
+    // 計算屬性
     // 計算 loadingView 高度
     // roundf: 返回四捨五入後的整數，帶入參數型別為 Float
-    private (set) var calLoadingViewHeight: CGFloat = CGFloat(roundf(Float(UIScreen.main.bounds.height / 8)))
+    var calLoadingViewHeight: CGFloat {
+        get {
+            if(896 >= UIScreen.main.bounds.height) {
+                return CGFloat(floor(Double(UIScreen.main.bounds.height / 8)))
+                
+            }else {
+                return CGFloat(floor(Double(896 / 8)))
+                
+            }
+            
+        }
+        
+    }
     // 載入時，讀取名稱
     var cusIndicatorLabel: UILabel?
     // 載入時，讀取畫面
@@ -107,7 +92,7 @@ class ActivityIndicatorView: UIView {
     typealias LoadingViewPosition = (frameX: CGFloat, frameY: CGFloat)
     // 計算 loadingView 座標位置
     // function 回傳為空時，是一個空的 Tuple，對應 Swift 語法資料型別為 Void，也是預設
-    internal func calculateLoadingViewPosition() -> LoadingViewPosition {
+    private func calculateLoadingViewPosition() -> LoadingViewPosition {
         // midFrameX 安全型別判斷
         guard let loadingViewMidFrameX = midFrameX else {
             return (0.0, 0.0)
@@ -119,8 +104,8 @@ class ActivityIndicatorView: UIView {
             
         }
         // 計算 loadingView X 座標位置
-        // 取得畫面上 X 座標中心值，首先計算完 loadingView width 後，再除於 2，得到 loadingView 目前本身 X 座標中心值離原本畫面上 X 座標中心值的距離，透過畫面上 X 座標中心值 - loadingView 中心值距離，即可計算出結果
-        let calLoadingViewFrameX: CGFloat = loadingViewMidFrameX - (calLoadingViewWidth / 2)
+        // 取得畫面上 X 座標中心值，首先計算完 loadingView width 後，再除於 2，得到 loadingView 目前本身 X 座標中心值離原本畫面上 X 座標中心值的距離，透過畫面上 X 座標中心值 - loadingView 中心值距離，但畫面上實際大小是會造成視覺效果誤差，所以再加上 10，讓位置更處於置中  即可計算出結果
+        let calLoadingViewFrameX: CGFloat = (loadingViewMidFrameX - (calLoadingViewWidth / 2)) + 10
         // 計算 loadingView Y 座標位置
         // 取得畫面上 Y 座標中心值，首先計算完 loadingView height 後，再除於 2，得到 loadingView 目前本身 Y 座標中心值離原本畫面上 Y 座標中心值的距離，透過畫面上 Y 座標中心值 - loadingView 中心值距離，即可計算出結果
         let calLoadingViewFrameY: CGFloat = loadingViewMidFrameY - (calLoadingViewHeight / 2)
@@ -145,6 +130,7 @@ class ActivityIndicatorView: UIView {
             return nil
             
         }
+    
         // 計算 loadingView 座標位置
         let posLoadingView = calculateLoadingViewPosition()
         // 設置 ActivityIndicatorView 大小及位置
@@ -164,18 +150,18 @@ class ActivityIndicatorView: UIView {
     // 計算 loadingView 上 label 座標位置
     // cusIndicatorLabel 的 frameX、frameY 座標位置是對應 loadingView，並不是對應裝置本身
     // function 回傳為空時，是一個空的 Tuple，對應 Swift 語法資料型別為 Void，也是預設
-    internal func calculateLoadingViewLabelPosition() -> LoadingViewLabelPosition {
+    private func calculateLoadingViewLabelPosition() -> LoadingViewLabelPosition {
         // label X 座標位置對應 loadingView 本身，利用 calLoadingViewWidth 來計算座標位置
         // roundf: 返回四捨五入後的整數，帶入參數型別為 Float
         let calLoadingViewLabelFrameX: CGFloat = CGFloat(roundf(Float(calLoadingViewWidth / 30)))
         // label Y 座標位置對應 loadingView 本身，利用 calLoadingViewHeight 來計算座標位置
-        let calLoadingViewLabelFrameY: CGFloat = calLoadingViewHeight / 2
+        let calLoadingViewLabelFrameY: CGFloat = (calLoadingViewHeight / 2) + 8
         
         return (calLoadingViewLabelFrameX, calLoadingViewLabelFrameY)
         
     }
     // 設置 cusIndicatorLabel 屬性
-    internal func setupCusIndicatorLabel() -> UILabel? {
+    private func setupCusIndicatorLabel() -> UILabel? {
         // 移除當前視圖上的父視圖，並沒有在內存中移除，需要使用，不需再次創建，直接使用 addSubView
         // removeFromSuperview(): 取消連接視圖與父視圖，也從響應事件操作的程序中移除
         cusIndicatorLabel?.removeFromSuperview()
@@ -193,7 +179,7 @@ class ActivityIndicatorView: UIView {
         // 設置 cusIndicatorLabel 文字粗細大小
         // UIFont.systemFont(): 系統字體大小及粗細度
         // UIFont.Weight.medium: 字體粗細度介於 regular 和 semibold 之間
-        cusIndicatorLabel?.font = UIFont.systemFont(ofSize: 14.0, weight: UIFont.Weight.medium)
+        cusIndicatorLabel?.font = UIFont.systemFont(ofSize: 13.0, weight: UIFont.Weight.medium)
         // 設置 cusIndicatorLabel 顏色及透明度
         cusIndicatorLabel?.textColor = UIColor(white: 0.9, alpha: 0.7)
         
@@ -201,12 +187,12 @@ class ActivityIndicatorView: UIView {
         
     }
     // 設置 cusIndicatorView 屬性
-    internal func setupCusIndicatorView() -> UIActivityIndicatorView? {
+    private func setupCusIndicatorView() -> UIActivityIndicatorView? {
         // 移除當前視圖上的父視圖，並沒有在內存中移除，需要使用，不需再次創建，直接使用 addSubView
         // removeFromSuperview(): 取消連接視圖與父視圖，也從響應事件操作的程序中移除
         cusIndicatorView?.removeFromSuperview()
         // 設置 ActivityIndicatorView 樣式，為白色的旋轉圈
-        cusIndicatorView = UIActivityIndicatorView(style: .white)
+        cusIndicatorView = UIActivityIndicatorView(style: .whiteLarge)
         // 讀取畫面動畫效果開始
         cusIndicatorView?.startAnimating()
         
@@ -214,7 +200,7 @@ class ActivityIndicatorView: UIView {
         
     }
     // 設置 cusIndicatorEffectView 屬性
-    internal func setupCusIndicatorEffectView() -> UIVisualEffectView? {
+    private func setupCusIndicatorEffectView() -> UIVisualEffectView? {
         // 移除當前視圖上的父視圖，並沒有在內存中移除，需要使用，不需再次創建，直接使用 addSubView
         cusIndicatorEffectView?.removeFromSuperview()
         // 提供模糊視覺效果，
@@ -231,15 +217,6 @@ class ActivityIndicatorView: UIView {
         return cusIndicatorEffectView
        
     }
-    // 設置 loadingView 延遲讀取時間畫面
-    func loadingViewDelayTime(_ second: Double, _ dispatchLevel: DisPatchLevel, _ delayTimeHandler: @escaping () -> Void) -> Void {
-        // 執行緒需要的延遲時間
-        // DispatchTime.now(): 取得當前執行緒時間
-        let delayTime: DispatchTime = DispatchTime.now() + second
-        
-        dispatchLevel.dispatchQueue.asyncAfter(deadline: delayTime, execute: delayTimeHandler)
-        
-    }
     // 移除當前視圖上的 loadingView
     func removeLoadingView() -> Void {
         // 取得主執行緒使用，異步執行，所有 UI 元件更新，需在主執行緒執行
@@ -249,7 +226,6 @@ class ActivityIndicatorView: UIView {
                 activityIndicatorViewSelf.cusIndicatorView?.stopAnimating()
                 // 移除當前視圖上的父視圖，並沒有在內存中移除，需要使用，不需再次創建，直接使用 addSubView
                 activityIndicatorViewSelf.cusIndicatorEffectView?.removeFromSuperview()
-                
                 
             }
            
