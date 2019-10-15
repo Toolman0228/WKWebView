@@ -38,7 +38,7 @@ class ViewController: UIViewController {
     // Read Only
     // 通過 UIApplication.shared 取得這個單例物件
     private (set) var reloadloadingViewAppDelegate: AppDelegate = UIApplication.shared.delegate as! AppDelegate
-    
+    // 製作 WKWebView 另外方法
     //    let webHTML = try! String(contentsOfFile: Bundle.main.path(forResource: "testScript", ofType: "html")!, encoding: String.Encoding.utf8)
     // MARK: 不使用 storyBoard，透過 lazy 來創造 WKWebView
     //    lazy var touchBarWebView: WKWebView = {
@@ -72,7 +72,7 @@ class ViewController: UIViewController {
   
     override func viewDidLoad() {
         super.viewDidLoad()
-        webviewNetWorkModel = NetWorkManager.shared!
+        webviewNetWorkModel = NetWorkManager.shared
         // Do any additional setup after loading the view.
         webViewModel = CusWebViewManager(btnSuperView: reloadWebViewBtnSuperView, webView: testWebView)
         
@@ -89,24 +89,28 @@ class ViewController: UIViewController {
     }
     // 重新報價按鈕
     @IBAction func ReloadWebViewBtnOnclick(_ sender: UIButton) {
-        // UIView 動畫效果
-        UIView.animate(withDuration: 1.0) { [weak self] in
-            // 安全型別判斷
-            if let vcSelf = self {
-                // 取得主執行緒使用，異步執行，所有 UI 元件更新，需在主執行緒執行
-                // webView 裡的 scrollView 座標位置偏移至最上層原點
-                // contentOffset: scrollView 起始座標位置與當前頁面內容之間座標位置偏移距離
-                // setContentOffset: 改變當前頁面原點座標位置
-                // 放在主執行緒使用時，可能會造成 UIView 動畫效果消失
-                vcSelf.testWebView.scrollView.setContentOffset(vcSelf.webScrollViewContentOffSet, animated: false)
-                // 取得主執行緒使用，異步執行，所有 UI 元件更新，需在主執行緒執行
-                DispatchQueue.main.async {
-                    // 按下重新報價按鈕時，創造 loadingView
-                    if let reloadLoadingView = vcSelf.reloadloadingViewAppDelegate.loadingView.setupLoadingView() {
-                        // reloadLoadingView 添加到 ViewController 上
-                        vcSelf.view.addSubview(reloadLoadingView)
-                        // 重新加載 webView 頁面
-                        self!.testWebView.reload()
+        // 創造 AlertController
+        AlertViewManager.alertView("提醒", "需要重新報價嗎？") { (reloadAction) in
+            // UIView 動畫效果
+            UIView.animate(withDuration: 1.0) { [weak self] in
+                // 安全型別判斷
+                if let vcSelf = self {
+                    // 取得主執行緒使用，異步執行，所有 UI 元件更新，需在主執行緒執行
+                    // webView 裡的 scrollView 座標位置偏移至最上層原點
+                    // contentOffset: scrollView 起始座標位置與當前頁面內容之間座標位置偏移距離
+                    // setContentOffset: 改變當前頁面原點座標位置
+                    // 放在主執行緒使用時，可能會造成 UIView 動畫效果消失
+                    vcSelf.testWebView.scrollView.setContentOffset(vcSelf.webScrollViewContentOffSet, animated: false)
+                    // 取得主執行緒使用，異步執行，所有 UI 元件更新，需在主執行緒執行
+                    DispatchQueue.main.async {
+                        // 按下重新報價按鈕時，創造 loadingView
+                        if let reloadLoadingView = vcSelf.reloadloadingViewAppDelegate.loadingView.setupLoadingView() {
+                            // reloadLoadingView 添加到 ViewController 上
+                            vcSelf.view.addSubview(reloadLoadingView)
+                            // 重新加載 webView 頁面
+                            vcSelf.testWebView.reload()
+                            
+                        }
                         
                     }
                     

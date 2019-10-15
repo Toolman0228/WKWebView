@@ -85,7 +85,7 @@ class NetWork<T: Codable>: NSObject {
     var netWorkDataTaskData: Data
     // 接收回傳請求訊息參數
     var netWorkDataTaskResponse: String
-    // 存放所有查詢 IP 地址資訊
+    // 存放所有查詢 IP 地址資訊陣列
     var IP_addresses: [String]
     // 存放 webView cookie 資料，是一個 Dictionary
     var cookieDictionaryArray: Dictionary<String, AnyObject>
@@ -122,7 +122,7 @@ class NetWork<T: Codable>: NSObject {
         
     }
     // 檢查行動數據資訊
-    func connectToRadioAccessValues(_ NetWorkInfoType: String) -> String? {
+    func connectToRadioAccessValues(_ NetWorkInfoType: String?) -> String? {
         // 判斷取得行動數據的存取技術
         switch NetWorkInfoType {
         case RadioAccessTechnoloyType.CTRadioAccessTechnologyGPRS.rawValue:
@@ -165,8 +165,10 @@ class NetWork<T: Codable>: NSObject {
         return nil
         
     }
+    // 自定義 closure { }，由於 sequence 方法，本身設置為逃逸閉包，造成當執行方此方法時，需要等方法內的齊其他事情做完吼後，才會最後執行，導致會回傳出一個空的陣列，修改方法為將本身有逃逸閉包再帶出去一次
+    typealias IfaddrsHandler = (_ ifaddrsArray: [String]) -> Void
     // 檢查是否開啟行動數據
-    func connectToIfaddrs() -> [String] {
+    func connectToIfaddrs(for ifaddrsCompletion: @escaping IfaddrsHandler) {
         // Get list of all interfaces on the local machine:
         // 使用指標達到三種目的:
         // 1. 用來動態產生某個物件的實體
@@ -181,92 +183,102 @@ class NetWork<T: Codable>: NSObject {
         // getifaddrs(): 指標會指向一個新的鏈結串列，會回傳一個指標，定義 32 位元有符號整數，為 Int32
         // & 符號: 可以將指向變量指標傳遞到接受指標作為參數的方法中使用，Ｃ 語言為取址
         guard getifaddrs(&IP_ifaddrs) == 0 else {
-            return []
+            return
             
         }
         // 存放 IP_ifaddr 變數，不為 0 時，取得第一個元素
         guard let first_IP_ifaddrs = IP_ifaddrs else {
-            return []
+            return
             
         }
         // 取得主執行緒使用，異步執行
-        DispatchQueue.main.async {
-            // 透過遍歷來檢查序列回傳的元素
-            // sequence(): 回傳序列返回的類型，首先重複延遲的應用程序後，再到下一個，first 會傳遞前一個元素，返回每個值，並繼續返回下一個元素
-            // first: 從序列返回的第一個元素
-            // next: 為閉包，接受前一個序列元素，並返回下一個元素，帶入閉包參數為閉包第一個參數的指針，指向鏈結串列下一個為元素
-            for IP_Pointee in sequence(first: first_IP_ifaddrs, next: { $0.pointee.ifa_next } ) {
-                // 手機 IP 裝置標識位，型別轉為定義 32 位有符號整數，為帶正負號 Int
-                // ifa_flags: IP 裝置標識
-                let IP_ifa_flags: Int32 = Int32(IP_Pointee.pointee.ifa_flags)
-                // 手機 IP 裝置地址
-                // ifa_addr: 指向一個包含 IP 地址的 sockaddr 結構
-                let IP_ifa_addr: sockaddr = IP_Pointee.pointee.ifa_addr.pointee
-                // Check for running IPv4, IPv6 interfaces. Skip the loopback interface.
-                // 判斷手機 IP 裝置標識位
-                // IFF_UP: 裝置正在運作，代表網路裝置是否正常啟用，拔除網路線並不會有任何變化
-                // IFF_RUNNING: 資源已分配，代表網路裝置是否正常啟用，拔除網路線會造成改變
-                // IFF_LOOPBACK: 自環接口，類似一張虛擬網路裝置
-                if(IP_ifa_flags & (IFF_UP | IFF_LOOPBACK) == IFF_UP) {
-                    // 判斷手機 IP 接口標識位為 IPV4、IPV6
-                    // sa_family: IP 地址種類，值為 AF_INET 時，代表 IPV4 地址，值為 AF_INET6 時，代表 IPV6 地址
-                    if(IP_ifa_addr.sa_family == UInt8(AF_INET) || IP_ifa_addr.sa_family == UInt8(AF_INET6)) {
-                        // Convert interface address to a human readable string:
-                        // hostName 是一個陣列，陣列型別為 char，存放取得 IPV4、IPV6 地址串
-                        // 主機名稱或者為地址串(IPV4 表示為點分十進位、IPV6 表示為十六進制)
-                        // repeating: 重複的元素
-                        // count: 重複的元素中，傳遞值的次數，必須為 0 或比 0 更大，定義 hostName 陣列大小
-                        var IP_hostName: [CChar] = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-                        // 必須將一個指向 sockaddr 結構的指標(可能是轉型過的 sockaddr_in 結構或是 sockaddr_in6 結構)傳遞給 sa 參數，這個結構的長度為 salen，可以查詢到 host name 與 service name 寫入 host 與 serv 參數所指的記憶體空間，必須用 hostlen 與 servlen 來指定這些緩衝區的最大長度
-                        // getnameinfo(): getaddrinfo() 的對比，sockaddr 結構提供資訊查詢主機名稱(host name)及服務名稱(service name)資訊，成功會回傳 0
-                        // UnsafePointer<Pointee>: 標準指標，指向某種型態的記憶體區塊，內存值不可改變
-                        // IP_Pointee.pointee.ifa_addr: 準備要用的 socket 位置資料結構，記錄很多 sockets 類型的 socket 位置資訊，為 sockaddr 結構
-                        // socklen_t(IP_ifa_addr.sa_len): socklen_t 長度為取得 IP 地址總長度，數據類型 socklen_t 和 Int 應該具有相同的長度
-                        // &IP_hostName: 取得 IP_hostName 資訊，為定義 8 位元有符號整數，為 Int8，為 char
-                        // socklen_t(IP_hostName.count): socklen_t 長度為 hostName 陣列大小，數據類型 socklen_t 和 Int 應該具有相同的長度，為 sockaddr 結構
-                        // socklen_t(0): socklen_t 長度為 0，為 sockaddr 結構
-                        // NI_NUMERICHOST: 以數字串格式返回主機字元串
-                        let IP_getNameInfo: Int32 = getnameinfo(IP_Pointee.pointee.ifa_addr , socklen_t(IP_ifa_addr.sa_len), &IP_hostName, socklen_t(IP_hostName.count), nil, socklen_t(0), NI_NUMERICHOST)
-                        // 判斷 getnameinfo() 回傳是否為 0
-                        if(0 != IP_getNameInfo) {
-                            // 查詢失敗
-                            // gai_strerror(): 不為 0 時，可以將回傳值帶入，取得錯誤的文字資訊
-                            gai_strerror(IP_getNameInfo)
-                            
-                        }else {
-                            // 查詢成功
-                            // 將 c 語言的 char 類型轉換成 c 語言的字串類型，再轉換成字串
-                            let IP_address: String = String(cString: IP_hostName)
-                            // 查詢到所有 IP 地址資訊放入一個陣列
-                            self.IP_addresses.append(IP_address)
+        DispatchQueue.main.async { [weak self] in
+            if let ifaddrsSelf = self {
+                // 透過遍歷來檢查序列回傳的元素
+                // sequence(): 回傳序列返回的類型，首先重複延遲的應用程序後，再到下一個，first 會傳遞前一個元素，返回每個值，並繼續返回下一個元素
+                // first: 從序列返回的第一個元素
+                // next: 為閉包，接受前一個序列元素，並返回下一個元素，帶入閉包參數為閉包第一個參數的指針，指向鏈結串列下一個為元素
+                for IP_Pointee in sequence(first: first_IP_ifaddrs, next: { $0.pointee.ifa_next } ) {
+                    // 手機 IP 裝置標識位，型別轉為定義 32 位有符號整數，為帶正負號 Int
+                    // ifa_flags: IP 裝置標識
+                    let IP_ifa_flags: Int32 = Int32(IP_Pointee.pointee.ifa_flags)
+                    // 手機 IP 裝置地址
+                    // ifa_addr: 指向一個包含 IP 地址的 sockaddr 結構
+                    let IP_ifa_addr: sockaddr = IP_Pointee.pointee.ifa_addr.pointee
+                    // Check for running IPv4, IPv6 interfaces. Skip the loopback interface.
+                    // 判斷手機 IP 裝置標識位
+                    // IFF_UP: 裝置正在運作，代表網路裝置是否正常啟用，拔除網路線並不會有任何變化
+                    // IFF_RUNNING: 資源已分配，代表網路裝置是否正常啟用，拔除網路線會造成改變
+                    // IFF_LOOPBACK: 自環接口，類似一張虛擬網路裝置
+                    if(IP_ifa_flags & (IFF_UP | IFF_LOOPBACK) == IFF_UP) {
+                        // 判斷手機 IP 接口標識位為 IPV4、IPV6
+                        // sa_family: IP 地址種類，值為 AF_INET 時，代表 IPV4 地址，值為 AF_INET6 時，代表 IPV6 地址
+                        if(IP_ifa_addr.sa_family == UInt8(AF_INET) || IP_ifa_addr.sa_family == UInt8(AF_INET6)) {
+                            // Convert interface address to a human readable string:
+                            // hostName 是一個陣列，陣列型別為 char，存放取得 IPV4、IPV6 地址串
+                            // 主機名稱或者為地址串(IPV4 表示為點分十進位、IPV6 表示為十六進制)
+                            // repeating: 重複的元素
+                            // count: 重複的元素中，傳遞值的次數，必須為 0 或比 0 更大，定義 hostName 陣列大小
+                            var IP_hostName: [CChar] = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+                            // 必須將一個指向 sockaddr 結構的指標(可能是轉型過的 sockaddr_in 結構或是 sockaddr_in6 結構)傳遞給 sa 參數，這個結構的長度為 salen，可以查詢到 host name 與 service name 寫入 host 與 serv 參數所指的記憶體空間，必須用 hostlen 與 servlen 來指定這些緩衝區的最大長度
+                            // getnameinfo(): getaddrinfo() 的對比，sockaddr 結構提供資訊查詢主機名稱(host name)及描述服務名稱(service name)資訊，成功會回傳 0，失敗會回傳 -1
+                            // UnsafePointer<Pointee>: 標準指標，指向某種型態的記憶體區塊，內存值不可改變
+                            // IP_Pointee.pointee.ifa_addr: 準備要用的 socket 位置資料結構，記錄很多 sockets 類型的 socket 位置資訊，為 sockaddr 結構
+                            // socklen_t(IP_ifa_addr.sa_len): socklen_t 長度為取得 IP 地址總長度，數據類型 socklen_t 和 Int 應該具有相同的長度
+                            // &IP_hostName: 取得 IP_hostName 資訊，為定義 8 位元有符號整數，為 Int8，為 char
+                            // socklen_t(IP_hostName.count): socklen_t 長度為 hostName 陣列大小，數據類型 socklen_t 和 Int 應該具有相同的長度，為 sockaddr 結構
+                            // socklen_t(0): socklen_t 長度為 0，為 sockaddr 結構
+                            // NI_NUMERICHOST: 以數字串格式返回主機字元串
+                            let IP_getNameInfo: Int32 = getnameinfo(IP_Pointee.pointee.ifa_addr , socklen_t(IP_ifa_addr.sa_len), &IP_hostName, socklen_t(IP_hostName.count), nil, socklen_t(0), NI_NUMERICHOST)
+                            // 判斷 getnameinfo() 回傳是否為 0
+                            if(0 != IP_getNameInfo) {
+                                // 查詢失敗
+                                // gai_strerror(): 不為 0 時，可以將回傳值帶入，取得錯誤的文字資訊
+                                //
+                                gai_strerror(IP_getNameInfo)
+                                
+                            }else {
+                                // 判斷 IP 地址資訊是否會重複放入陣列
+                                if(4 > ifaddrsSelf.IP_addresses.count) {
+                                    // 查詢成功
+                                    // 將 c 語言的 char 類型轉換成 c 語言的字串類型，再轉換成字串
+                                    let IP_address: String = String(cString: IP_hostName)
+                                    // 查詢到所有 IP 地址資訊放入一個陣列
+                                    ifaddrsSelf.IP_addresses.append(IP_address)
+                                    
+                                }
+                                
+                                
+                            }
                             
                         }
                         
                     }
                     
                 }
+                // 使用完畢，需要釋放記憶體，主要釋放 ifaddrs 結構
+                freeifaddrs(IP_ifaddrs)
+                // 自定義 closure { }，由於 sequence 方法，本身設置為逃逸閉包，造成當執行方此方法時，需要等方法內的齊其他事情做完吼後，才會最後執行，導致會回傳出一個空的陣列，修改方法為將本身有逃逸閉包再帶出去一次
+                ifaddrsCompletion(ifaddrsSelf.IP_addresses)
                 
             }
-            // 使用完畢，需要釋放記憶體，主要釋放 ifaddrs 結構
-            freeifaddrs(IP_ifaddrs)
             
         }
-        return IP_addresses
     
     }
     // 檢查是否開啟 wifi 使用
-    func isConnectedToNetwork() -> Bool {
-        
+    func connectToWifi() -> Bool {
+
         var zeroAddress = sockaddr_in()
         zeroAddress.sin_len = UInt8(MemoryLayout.size(ofValue: zeroAddress))
         zeroAddress.sin_family = sa_family_t(AF_INET)
-        
+
         let defaultRouteReachability = withUnsafePointer(to: &zeroAddress) {
             $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {zeroSockAddress in
                 SCNetworkReachabilityCreateWithAddress(nil, zeroSockAddress)
             }
         }
-        
+
         var flags = SCNetworkReachabilityFlags()
         if !SCNetworkReachabilityGetFlags(defaultRouteReachability!, &flags) {
             return false
@@ -274,8 +286,31 @@ class NetWork<T: Codable>: NSObject {
         let isReachable = (flags.rawValue & UInt32(kSCNetworkFlagsReachable)) != 0
         let needsConnection = (flags.rawValue & UInt32(kSCNetworkFlagsConnectionRequired)) != 0
         return (isReachable && !needsConnection)
-        
+
     }
+//    // 檢查行動數據、wifi 狀態
+//    func netWorkConnectStatus() -> Bool {
+//        // 檢查是否開啟行動數據
+//        let ifaddrs: [String] = connectToIfaddrs()
+//        // 檢查是否開啟 wifi 使用
+//        let wifi: Bool = isConnectedToNetwork()
+//        
+//        switch (ifaddrs.isEmpty, wifi) {
+//        case (false, false):
+//            return true
+//            
+//        case (true, true):
+//            return true
+//            
+//        case (false, true):
+//            return true
+//            
+//        case (true, false):
+//            return false
+//    
+//        }
+//        
+//    }
     // 自定義 closure { }，主要為檢查伺服器狀態是否成功接收要求，設置為逃逸閉包，方便多次呼叫
     typealias RequestResultHandler = (_ result: RequestResult<Codable>, _ success: Bool) -> Void
     // 回傳 webView 資料
@@ -385,17 +420,26 @@ class NetWork<T: Codable>: NSObject {
     // 取得 webView cookies
     func takeWebViewCookies(_ getCompletion: @escaping GetCookiesHandler) -> Void {
         // 取得主執行緒使用，異步執行
-        DispatchQueue.main.async {
-            // 獲取所有儲存的 cookies
-            self.webViewHttpCookieStore.getAllCookies { [weak self] takeCookies in
-                // 判斷 cookies 總共有幾筆
-                if(0 != takeCookies.count) {
-                    // 儲存 cookies 於本地端
-                    // self.saveCookiesUserDefaults(cookies)
-                    // 處理 cookies 資料，回傳完整 cookie 資料陣列
-                    if let takeCookieDictionaryArray = self!.webViewCookie(takeCookies) {
-                        // 主要為取得 cookies 是否成功，設置為逃逸閉包，方便多次呼叫
-                        getCompletion(takeCookieDictionaryArray, true)
+        DispatchQueue.main.async { [weak self] in
+            // 安全型別判斷
+            if let takeCookiesSelf = self {
+                // 獲取所有儲存的 cookies
+                takeCookiesSelf.webViewHttpCookieStore.getAllCookies { takeCookies in
+                    // 判斷 cookies 總共有幾筆
+                    if(0 != takeCookies.count) {
+                        // 儲存 cookies 於本地端
+                        // self.saveCookiesUserDefaults(cookies)
+                        // 處理 cookies 資料，回傳完整 cookie 資料陣列
+                        if let takeCookieDictionaryArray = takeCookiesSelf.webViewCookie(takeCookies) {
+                            // 主要為取得 cookies 是否成功，設置為逃逸閉包，方便多次呼叫
+                            getCompletion(takeCookieDictionaryArray, true)
+                            
+                        }else {
+                            // 當前網域的 cookie 為 nil，失敗回傳 false
+                            // 主要為取得 cookies 是否成功，設置為逃逸閉包，方便多次呼叫
+                            getCompletion(nil, false)
+                            
+                        }
                         
                     }else {
                         // 當前網域的 cookie 為 nil，失敗回傳 false
@@ -404,14 +448,10 @@ class NetWork<T: Codable>: NSObject {
                         
                     }
                     
-                }else {
-                    // 當前網域的 cookie 為 nil，失敗回傳 false
-                    // 主要為取得 cookies 是否成功，設置為逃逸閉包，方便多次呼叫
-                    getCompletion(nil, false)
-                    
                 }
                 
             }
+            
         }
         
     }
@@ -420,7 +460,7 @@ class NetWork<T: Codable>: NSObject {
     // 刪除 webView cookies
     func removeWebViewCookies(deleteCompletion: @escaping DeleteCookiesHandler) -> Void {
         // 取得主執行緒使用，異步執行
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
             // 刪除被指定時間後所有的 cookies
             HTTPCookieStorage.shared.removeCookies(since: Date.distantPast)
             // 刪除全部緩存
@@ -429,45 +469,54 @@ class NetWork<T: Codable>: NSObject {
             // ofTypes: 取得紀錄 webView data 的類型
             // WKWebsiteDataStore.allWebsiteDataTypes(): 回傳所有可使用 webView data 的類型
             WKWebsiteDataStore.default().fetchDataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes()) { (records) in
-                // 判斷 cookies 是否有緩存資料
-                if(0 != self.cookieDictionaryArray.count) {
-                    records.forEach({ (record) in
-//                        // 安全型別判斷
-//                        if let domain = domain {
-//                            // displayName: webView data 紀錄名稱，通常是網域名稱
-//                            if(true == record.displayName.contains(domain)) {
+                // 安全型別判斷
+                if let deletCookiesSelf = self {
+                    // 判斷 cookies 是否有緩存資料
+                    if(0 != deletCookiesSelf.cookieDictionaryArray.count) {
+                        records.forEach({ (record) in
+//                            // 安全型別判斷
+//                            if let domain = domain {
+//                                // displayName: webView data 紀錄名稱，通常是網域名稱
+//                                if(true == record.displayName.contains(domain)) {
+//
+//                                }
 //
 //                            }
-//
-//                        }
-                        // 主要為將刪除 cookies 帶出，是否刪除成功，設置為逃逸閉包，方便多次呼叫
-                        deleteCompletion(record, true)
+                            // 主要為將刪除 cookies 帶出，是否刪除成功，設置為逃逸閉包，方便多次呼叫
+                            deleteCompletion(record, true)
+                            
+                        })
                         
-                    })
-                    
-                }else {
-                    // 主要為將刪除 cookies 帶出，是否刪除成功，設置為逃逸閉包，方便多次呼叫
-                    deleteCompletion(nil, false)
+                    }else {
+                        // 主要為將刪除 cookies 帶出，是否刪除成功，設置為逃逸閉包，方便多次呼叫
+                        deleteCompletion(nil, false)
+                        
+                    }
                     
                 }
                 
             }
+            
         }
         
     }
     
-    func aaa() {
-        var libraryPath : String = FileManager().urls(for: .libraryDirectory, in: .userDomainMask).first!.path
-        libraryPath += "/Cookies"
-        
-        do {
-            try FileManager.default.removeItem(atPath: libraryPath)
-        } catch {
-            print("error")
-        }
-        URLCache.shared.removeAllCachedResponses()
-        
-    }
+//    func libraryPathForCookies() {
+//        var libraryPath : String = FileManager().urls(for: .libraryDirectory, in: .userDomainMask).first!.path
+//
+//        libraryPath += "/Cookies"
+//
+//        do {
+//            try FileManager.default.removeItem(atPath: libraryPath)
+//
+//        } catch {
+//            print("error")
+//
+//        }
+//
+//        URLCache.shared.removeAllCachedResponses()
+//
+//    }
     // json 格式解碼
     func webViewJsonDecoder(_ object: T.Type) -> T? {
         do {
@@ -496,10 +545,14 @@ class NetWork<T: Codable>: NSObject {
 }
 
 //extension WKWebViewConfiguration {
+//
 //    func add(script: WKUserScript.Defined, scriptMessageHandler: WKScriptMessageHandler) {
 //        userContentController.addUserScript(script.create())
+//
 //        userContentController.add(scriptMessageHandler, name: script.name)
+//
 //    }
+//
 //}
 
 

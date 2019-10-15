@@ -10,6 +10,7 @@ import UIKit
 
 class TestNaviationBar: UINavigationBar {
     // Read Only
+    // 設置 navBarImageView 座標位置及大小
     private (set) var navBarImageView: UIImageView = UIImageView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height))
 
     /*

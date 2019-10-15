@@ -15,7 +15,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
     // Read Only
     // DispatchWorkItem: 為一個代碼區塊，可以在任何佇列上被調用，裡面程式碼可以在子執行緒或在主執行緒執行，主要將工作概念封裝，幫助 DispatchQueue 來執行佇列上任務
-    private(set) var delayLaunchScreenTimeWorkItem: DispatchWorkItem? = {
+    private(set) var delayLaunchScreenTimeWorkItem: DispatchWorkItem = {
        return DispatchWorkItem.init(block: {})
         
     }()
@@ -38,9 +38,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         Thread.sleep(forTimeInterval: 0.5)
         // window 視窗大小為 iPhone 螢幕尺寸大小，初始化 window
         self.window = UIWindow(frame: UIScreen.main.bounds)
-        // 加載 storyboard 文件，使用 UIStoryboard 初始化頁面
+        // 創造 rootViewController
+        // 加載 LaunchScreen.storyboard 文件，使用 UIStoryboard 初始化頁面
         // instantiateInitialViewController(): 加載 storyboard 上的頁面
-        self.window?.rootViewController = UIStoryboard(name: "LaunchScreen", bundle: nil).instantiateInitialViewController()
+        self.window?.rootViewController = createRootViewController("LaunchScreen")
         // 顯示 window
         self.window?.makeKeyAndVisible()
         // 創造 loadingView
@@ -57,29 +58,35 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 // 設置延遲讀取時間畫面，因為是進行 UI 更新，需要在主執行緒執行
                 DispatchQueue.disPatchDelayTime(2.5, .main) {
                     // 設置線程只進行一次
-                    DispatchQueue.once("com.apple.LaunchScreen", ADSelf, {
+                    DispatchQueue.once("com.apple.LaunchScreen", ADSelf) {
+                        // 創造 rootViewController
+                        // 加載 Main.storyboard 文件，使用 UIStoryboard 初始化頁面
+                        // instantiateInitialViewController(): 加載 storyboard 上的頁面
+                        ADSelf.window?.rootViewController = ADSelf.createRootViewController("Main")
                         
-                        ADSelf.window?.rootViewController = UIStoryboard(name: "Main", bundle: nil).instantiateInitialViewController()
-                        
-                    })
+                    }
                     
                 }
                 
             }
             
-            
         }
         // 佇列上，提交需要執行工作，為子執行緒的異步執行，結束後，會立即返回，不會有執行緒卡住問題
         // execute: 提交需要執行工作
-        DispatchQueue.global().async(execute: delayLaunchScreenTimeWorkItem!)
+        DispatchQueue.global().async(execute: delayLaunchScreenTimeWorkItem)
         // Override point for customization after application launch.
         let netWorkManager: NetWorkManager = NetWorkManager(netWorkURL: URL(string: "https://ifixit.tw/")!)
         
         NetWorkManager.setAsSingleton(instance: netWorkManager)
         // 取消 delayLaunchScreenTimeWorkItem 任務
-        delayLaunchScreenTimeWorkItem?.cancel()
+        delayLaunchScreenTimeWorkItem.cancel()
         
         return true
+        
+    }
+    // 創造 rootViewController
+    func createRootViewController(_ name: String) -> UIViewController? {
+        return UIStoryboard(name: name, bundle: nil).instantiateInitialViewController()
         
     }
     // applicationWillResignActive 當 app 浮起來準備進入背景時出現

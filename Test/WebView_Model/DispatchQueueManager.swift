@@ -47,6 +47,7 @@ public enum DisPatchLevel {
 }
 
 extension DispatchQueue {
+    // 利用陣列字串比對，保證線程不被其他影響
     static private var onceTracker = [String]()
     // 設置延遲讀取時間畫面
     // class func: 指定類別方法，可以被子類別重寫
@@ -74,7 +75,6 @@ extension DispatchQueue {
             objc_sync_exit(lock)
             
         }
-        // 利用陣列字串比對，保證線程不被其他影響，
         // token 可能會有不同線程操作的名稱，為一個標示符
         guard true != onceTracker.contains(token) else {
             return

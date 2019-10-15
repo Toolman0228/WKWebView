@@ -130,7 +130,6 @@ class ActivityIndicatorView: UIView {
             return nil
             
         }
-    
         // 計算 loadingView 座標位置
         let posLoadingView = calculateLoadingViewPosition()
         // 設置 ActivityIndicatorView 大小及位置
@@ -191,8 +190,19 @@ class ActivityIndicatorView: UIView {
         // 移除當前視圖上的父視圖，並沒有在內存中移除，需要使用，不需再次創建，直接使用 addSubView
         // removeFromSuperview(): 取消連接視圖與父視圖，也從響應事件操作的程序中移除
         cusIndicatorView?.removeFromSuperview()
-        // 設置 ActivityIndicatorView 樣式，為白色的旋轉圈
-        cusIndicatorView = UIActivityIndicatorView(style: .whiteLarge)
+        // iOS 13 版本以上
+        if #available(iOS 13.0, *) {
+            // 設置 ActivityIndicatorView 樣式，為大型旋轉圈
+            // iOS 13 廢除 UIActivityIndicatorView.Style 的 .whiteLarge，顏色需另外設置
+            cusIndicatorView = UIActivityIndicatorView(style: .large)
+            // 設置 ActivityIndicatorView 顏色
+            cusIndicatorView?.color = .white
+            
+        }else {
+            // 設置 ActivityIndicatorView 顏色及樣式，為白色的旋轉圈
+            cusIndicatorView = UIActivityIndicatorView(style: .whiteLarge)
+            
+        }
         // 讀取畫面動畫效果開始
         cusIndicatorView?.startAnimating()
         
