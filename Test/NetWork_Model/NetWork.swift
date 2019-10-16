@@ -317,7 +317,7 @@ class NetWork<T: Codable>: NSObject {
     func webViewRequestData(for url: URL, ResultCompletion: @escaping RequestResultHandler) -> Void {
         // URL 加載請求
         // timeIntervalSince1970: 格林威治時間 1970 年 01 月 01 日 00 時 00 分 00 秒至當下的時間秒差
-        //格林威治時間1970年01月01日 00時00分00秒 」至當下的時間的秒差
+        // 格林威治時間1970年01月01日 00時00分00秒 」至當下的時間的秒差
         let postURLRequest: URLRequest = URLRequest(url: netWorkURL, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 60)
         // 設置 URLRequest 請求方法為 Post
         //        postURLRequest.httpMethod = "POST"

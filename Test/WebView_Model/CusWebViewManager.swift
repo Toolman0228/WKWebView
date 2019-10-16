@@ -66,7 +66,6 @@ class CusWebViewManager: NSObject {
         }
         
     }
-    
 //    // 儲存 cookie 於本地端
 //    func saveCookiesUserDefaults(_ saveData: [HTTPCookie]) -> Void {
 //        // 序列化資料，通過 archivedData 方法，轉為可以儲存資料的型別
@@ -93,41 +92,40 @@ extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
         // 是否使用 scrollView 拖曳手勢
         webScrollViewGestureRecognizer(false)
-        
-        netWorkModel.connectToIfaddrs { (connect) in
-            print(connect.count)
-            // 判斷 connect 是否有順利查詢成功 IP 地址資訊
-            print("剛開始載入網頁，IP 地址資訊目前有 \(connect.count) 筆")
-            if(false != (4 > connect.count)) {
-                // 將需要執行工作封裝，方便在任何佇列上被調用
-                self.delayLoadingTimeWorkItem = DispatchWorkItem {
-                    // 取得主執行緒使用，異步執行，所有 UI 元件更新，需在主執行緒執行
-                    DispatchQueue.main.async {
-                        // 加載本地端的 HTML 檔案，為 nil
-                        webView.loadHTMLString("", baseURL: nil)
-                        // 創造 AlertController
-                        AlertViewManager.alertView("警告", "請檢查行動數據或 Wifi 是否開啟！") { (netWorkAction) in
-                            // 出現警告視窗，結束後，取消 delayTimeWorkItem 任務
-                            self.delayLoadingTimeWorkItem.cancel()
-                            
-                            fatalError("WebView connect is error")
-                                
-                        }
-                        
-                    }
-
-                }
-                // 佇列上，提交需要執行工作，為子執行緒的異步執行，結束後，會立即返回，不會有執行緒卡住問題
-                // execute: 提交需要執行工作
-                DispatchQueue.global().async(execute: self.delayLoadingTimeWorkItem)
-            
-            }else {
-                // 行動數據或 Wifi 開啟，取消 delayTimeWorkItem 任務
-                self.delayLoadingTimeWorkItem.cancel()
-                    
-            }
-            
-        }
+        // 行動數據或 Wifi 開啟，取消 delayTimeWorkItem 任務
+        self.delayLoadingTimeWorkItem.cancel()
+//        // 檢查是否開啟行動數據
+//        netWorkModel.connectToIfaddrs { (connect) in
+//            print(connect.count)
+//            // 判斷 connect 是否有順利查詢成功 IP 地址資訊
+//            print("剛開始載入網頁，IP 地址資訊目前有 \(connect.count) 筆")
+//            if(false != (4 > connect.count)) {
+//                // 將需要執行工作封裝，方便在任何佇列上被調用
+//                self.delayLoadingTimeWorkItem = DispatchWorkItem {
+//                    // 取得主執行緒使用，異步執行，所有 UI 元件更新，需在主執行緒執行
+//                    DispatchQueue.main.async {
+//                        // 創造 AlertController
+//                        AlertViewManager.alertView("警告", "請檢查行動數據或 Wifi 是否開啟！") { (netWorkAction) in
+//                            // 出現警告視窗，結束後，取消 delayTimeWorkItem 任務
+//                            self.delayLoadingTimeWorkItem.cancel()
+//
+//                            fatalError("WebView connect is error")
+//
+//                        }
+//
+//                    }
+//
+//                }
+//                // 佇列上，提交需要執行工作，為子執行緒的異步執行，結束後，會立即返回，不會有執行緒卡住問題
+//                // execute: 提交需要執行工作
+//                DispatchQueue.global().async(execute: self.delayLoadingTimeWorkItem)
+//
+//            }else {
+//
+//
+//            }
+//
+//        }
         
     }
     // webView 收到伺服器響應頭呼叫，包含 response 的相關資訊，回撥決定是否跳轉
@@ -211,8 +209,6 @@ extension CusWebViewManager: WKNavigationDelegate, WKUIDelegate {
         self.delayLoadingTimeWorkItem = DispatchWorkItem {
             // 設置延遲讀取時間畫面，因為是進行 UI 更新，需要在主執行緒執行
             DispatchQueue.disPatchDelayTime(2.5, .main) {
-                // 加載本地端的 HTML 檔案，為 nil
-                webView.loadHTMLString("", baseURL: nil)
                 // 創造 AlertController
                 AlertViewManager.alertView("警告", "請檢查行動數據或 Wifi 是否開啟！") { (netWorkAction) in
                     // 出現警告視窗，結束後，取消 delayTimeWorkItem 任務

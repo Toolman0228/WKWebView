@@ -140,7 +140,9 @@ class ViewController: UIViewController {
     // 讀取 webView 內容
     private func loadTestWebViewUrl() -> Void {
         // URL 加載請求
-        let request = URLRequest(url: webviewNetWorkModel.netWorkURL)
+        var request = URLRequest(url: webviewNetWorkModel.netWorkURL)
+        // 加載請求超時時間
+        request.timeoutInterval = 5
         // 讀取 URL 加載請求
         testWebView.load(request)
         // 加載本地端的 HTML 檔案
